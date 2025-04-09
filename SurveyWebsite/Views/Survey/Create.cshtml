@@ -141,142 +141,142 @@
     </form>
 </div>
 @section Scripts {
-    <script>
-        function updateQuestionIndexes() {
-            const questionItems = document.querySelectorAll(".question-item");
-            questionItems.forEach((qItem, i) => {
-                // Update names for question inputs
-                qItem.querySelectorAll("input, select, textarea").forEach(el => {
-                    if (el.name.includes("Questions[")) {
-                        el.name = el.name.replace(/Questions\[\d+\]/g, `Questions[${i}]`);
-                    }
-                });
-
-                // Update IDs and addOption button
-                const optionsContainer = qItem.querySelector(".options-container");
-                optionsContainer.id = `options-${i}`;
-
-                const addBtn = qItem.querySelector(".btn-add-option");
-                addBtn.setAttribute("onclick", `addOption(${i})`);
-                addBtn.id = `add-option-btn-${i}`;
-
-                const select = qItem.querySelector("select[name*='QuestionType']");
-                select.setAttribute("onchange", `handleQuestionTypeChange(${i}, this)`);
-
-                // Update option names
-                updateOptionIndexes(i);
+<script>
+    function updateQuestionIndexes() {
+        const questionItems = document.querySelectorAll(".question-item");
+        questionItems.forEach((qItem, i) => {
+            // Update names for question inputs
+            qItem.querySelectorAll("input, select, textarea").forEach(el => {
+                if (el.name.includes("Questions[")) {
+                    el.name = el.name.replace(/Questions\[\d+\]/g, `Questions[${i}]`);
+                }
             });
-        }
 
-        function updateOptionIndexes(qIndex) {
-            const optionContainer = document.getElementById(`options-${qIndex}`);
-            const optionItems = optionContainer.querySelectorAll(".option-item");
-            optionItems.forEach((optItem, j) => {
-                const input = optItem.querySelector("input");
-                input.name = `Questions[${qIndex}].Options[${j}].OptionText`;
-            });
-        }
+            // Update IDs and addOption button
+            const optionsContainer = qItem.querySelector(".options-container");
+            optionsContainer.id = `options-${i}`;
 
-        function addQuestion() {
-            const container = document.getElementById("questionsContainer");
-            const questionCount = document.querySelectorAll(".question-item").length;
+            const addBtn = qItem.querySelector(".btn-add-option");
+            addBtn.setAttribute("onclick", `addOption(${i})`);
+            addBtn.id = `add-option-btn-${i}`;
 
-            const html = `
-            <div class="card mb-3 question-item">
-                <div class="card-body">
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nội dung câu hỏi *</label>
-                        <input name="Questions[${questionCount}].QuestionText" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Loại câu hỏi</label>
-                        <select name="Questions[${questionCount}].QuestionType" class="form-select"
-                                onchange="handleQuestionTypeChange(${questionCount}, this)">
-                            <option value="Text">Tự luận</option>
-                            <option value="MultipleChoice">Trắc nghiệm</option>
-                            <option value="Checkbox">Checkbox (nhiều lựa chọn)</option>
-                        </select>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input type="checkbox" name="Questions[${questionCount}].IsRequired" class="form-check-input" />
-                        <label class="form-check-label">Câu hỏi bắt buộc</label>
-                    </div>
-                    <div id="options-${questionCount}" class="options-container" style="display: none;">
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-add-option"
-                            onclick="addOption(${questionCount})" id="add-option-btn-${questionCount}" style="display: none;">
-                        <i class="fas fa-plus"></i> Thêm lựa chọn
+            const select = qItem.querySelector("select[name*='QuestionType']");
+            select.setAttribute("onchange", `handleQuestionTypeChange(${i}, this)`);
+
+            // Update option names
+            updateOptionIndexes(i);
+        });
+    }
+
+    function updateOptionIndexes(qIndex) {
+        const optionContainer = document.getElementById(`options-${qIndex}`);
+        const optionItems = optionContainer.querySelectorAll(".option-item");
+        optionItems.forEach((optItem, j) => {
+            const input = optItem.querySelector("input");
+            input.name = `Questions[${qIndex}].Options[${j}].OptionText`;
+        });
+    }
+
+    function addQuestion() {
+        const container = document.getElementById("questionsContainer");
+        const questionCount = document.querySelectorAll(".question-item").length;
+
+        const html = `
+        <div class="card mb-3 question-item">
+            <div class="card-body">
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
-            </div>`;
-
-            container.insertAdjacentHTML('beforeend', html);
-            updateQuestionIndexes();
-        }
-
-        function addOption(qIndex) {
-            const optionContainer = document.getElementById(`options-${qIndex}`);
-            const count = optionContainer.querySelectorAll(".option-item").length;
-
-            const html = `
-            <div class="input-group mb-2 option-item">
-                <input name="Questions[${qIndex}].Options[${count}].OptionText" class="form-control" />
-                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                    <i class="fas fa-times"></i>
+                <div class="mb-3">
+                    <label class="form-label">Nội dung câu hỏi *</label>
+                    <input name="Questions[${questionCount}].QuestionText" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Loại câu hỏi</label>
+                    <select name="Questions[${questionCount}].QuestionType" class="form-select"
+                            onchange="handleQuestionTypeChange(${questionCount}, this)">
+                        <option value="Text">Tự luận</option>
+                        <option value="MultipleChoice">Trắc nghiệm</option>
+                        <option value="Checkbox">Checkbox (nhiều lựa chọn)</option>
+                    </select>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="Questions[${questionCount}].IsRequired" class="form-check-input" />
+                    <label class="form-check-label">Câu hỏi bắt buộc</label>
+                </div>
+                <div id="options-${questionCount}" class="options-container" style="display: none;">
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-add-option"
+                        onclick="addOption(${questionCount})" id="add-option-btn-${questionCount}" style="display: none;">
+                    <i class="fas fa-plus"></i> Thêm lựa chọn
                 </button>
-            </div>`;
-            optionContainer.insertAdjacentHTML('beforeend', html);
-            updateOptionIndexes(qIndex);
-        }
+            </div>
+        </div>`;
 
-        function removeQuestion(btn) {
-            const questionItem = btn.closest('.question-item');
-            questionItem.remove();
-            updateQuestionIndexes();
-        }
+        container.insertAdjacentHTML('beforeend', html);
+        updateQuestionIndexes();
+    }
 
-        function removeOption(btn) {
-            const optItem = btn.closest('.option-item');
-            const container = optItem.parentElement;
-            optItem.remove();
+    function addOption(qIndex) {
+        const optionContainer = document.getElementById(`options-${qIndex}`);
+        const count = optionContainer.querySelectorAll(".option-item").length;
 
-            const qIndex = parseInt(container.id.split("-")[1]);
-            updateOptionIndexes(qIndex);
-        }
+        const html = `
+        <div class="input-group mb-2 option-item">
+            <input name="Questions[${qIndex}].Options[${count}].OptionText" class="form-control" />
+            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`;
+        optionContainer.insertAdjacentHTML('beforeend', html);
+        updateOptionIndexes(qIndex);
+    }
 
-        function handleQuestionTypeChange(qIndex, select) {
-            const selectedType = select.value;
-            const optionsContainer = document.getElementById(`options-${qIndex}`);
-            const addBtn = document.getElementById(`add-option-btn-${qIndex}`);
+    function removeQuestion(btn) {
+        const questionItem = btn.closest('.question-item');
+        questionItem.remove();
+        updateQuestionIndexes();
+    }
 
-            if (selectedType === "Text") {
-                optionsContainer.style.display = "none";
-                if (addBtn) addBtn.style.display = "none";
-            } else {
-                optionsContainer.style.display = "block";
-                if (addBtn) addBtn.style.display = "inline-block";
+    function removeOption(btn) {
+        const optItem = btn.closest('.option-item');
+        const container = optItem.parentElement;
+        optItem.remove();
 
-                // Nếu chưa có lựa chọn nào thì thêm 1 cái trống
-                if (optionsContainer.children.length === 0) {
-                    addOption(qIndex);
-                }
+        const qIndex = parseInt(container.id.split("-")[1]);
+        updateOptionIndexes(qIndex);
+    }
+
+    function handleQuestionTypeChange(qIndex, select) {
+        const selectedType = select.value;
+        const optionsContainer = document.getElementById(`options-${qIndex}`);
+        const addBtn = document.getElementById(`add-option-btn-${qIndex}`);
+
+        if (selectedType === "Text") {
+            optionsContainer.style.display = "none";
+            if (addBtn) addBtn.style.display = "none";
+        } else {
+            optionsContainer.style.display = "block";
+            if (addBtn) addBtn.style.display = "inline-block";
+
+            // Nếu chưa có lựa chọn nào thì thêm 1 cái trống
+            if (optionsContainer.children.length === 0) {
+                addOption(qIndex);
             }
         }
+    }
 
-        // Xử lý toggle danh sách người dùng khi chọn công khai/riêng tư
-        const isPublicCheckbox = document.getElementById('isPublicCheckbox');
-        const allowedUsersSection = document.getElementById('allowedUsersSection');
+    // Xử lý toggle danh sách người dùng khi chọn công khai/riêng tư
+    const isPublicCheckbox = document.getElementById('isPublicCheckbox');
+    const allowedUsersSection = document.getElementById('allowedUsersSection');
 
-        function toggleAllowedUsers() {
-            allowedUsersSection.style.display = isPublicCheckbox.checked ? "none" : "block";
-        }
+    function toggleAllowedUsers() {
+        allowedUsersSection.style.display = isPublicCheckbox.checked ? "none" : "block";
+    }
 
-        isPublicCheckbox.addEventListener('change', toggleAllowedUsers);
-        toggleAllowedUsers();
-    </script>
+    isPublicCheckbox.addEventListener('change', toggleAllowedUsers);
+    toggleAllowedUsers();
+</script>
 }
