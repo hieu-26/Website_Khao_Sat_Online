@@ -1,17 +1,13 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using SurveyWebsite.Models;
 using SurveyWebsite.Models.ViewModels;
-using Microsoft.EntityFrameworkCore;
-
+using System.Security.Claims;
 
 namespace SurveyWebsite.Controllers
 {
     [Authorize]
-    //[AllowAnonymous]
-
     public class SurveyController : Controller
     {
         private readonly SurveyDbContext _context;
@@ -21,23 +17,20 @@ namespace SurveyWebsite.Controllers
             _context = context;
         }
 
-        // GET: Survey/Create
+        private int GetCurrentUserId()
+        {
+            return int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        }
+
         public IActionResult Create()
         {
             var model = new SurveyCreateViewModel
             {
-                Questions = new List<QuestionViewModel>
-                {
-                    new QuestionViewModel
-                    {
-                        Options = new List<OptionViewModel> { new OptionViewModel(), new OptionViewModel() }
-                    }
-                }
+                AllUsers = _context.Users.ToList(),
+                Questions = new List<SurveyCreateViewModel.QuestionViewModel>()
             };
             return View(model);
         }
-
-        // POST: Survey/Create
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -45,375 +38,180 @@ namespace SurveyWebsite.Controllers
         {
             if (!ModelState.IsValid)
             {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                foreach (var error in errors)
-                {
-                    Console.WriteLine(error); // hoặc log lỗi
-                }
+                model.AllUsers = _context.Users.ToList();
                 return View(model);
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
-                return Unauthorized();
+            var userId = GetCurrentUserId();
 
             var survey = new Survey
             {
                 Title = model.Title,
                 Description = model.Description,
                 IsPublic = model.IsPublic,
+                CreatedDate = DateTime.UtcNow,
                 CreatorUserId = userId,
-                CreatedDate = DateTime.Now,
-                LastModifiedDate = DateTime.Now
+                SurveySetting = new SurveySetting
+                {
+                    AllowMultipleResponses = model.AllowMultipleResponses,
+                    RequireLogin = model.RequireLogin,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate
+                },
+                Questions = model.Questions.Select(q => new Question
+                {
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType,
+                    IsRequired = q.IsRequired,
+                    Options = q.Options?.Select(o => new Option
+                    {
+                        OptionText = o.OptionText
+                    }).ToList() ?? new List<Option>()
+                }).ToList()
             };
 
             _context.Surveys.Add(survey);
-            await _context.SaveChangesAsync(); // Để lấy được SurveyID
+            await _context.SaveChangesAsync();
 
-            var setting = new SurveySetting
+            if (!model.IsPublic && model.AllowedUserIds != null && model.AllowedUserIds.Any())
             {
-                SurveyId = survey.SurveyId,
-                AllowMultipleResponses = model.AllowMultipleResponses,
-                RequireLogin = model.RequireLogin,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate
-            };
-            _context.SurveySettings.Add(setting);
-
-            foreach (var qvm in model.Questions)
-            {
-                var question = new Question
+                var allowed = model.AllowedUserIds.Select(uid => new SurveyAllowedUser
                 {
                     SurveyId = survey.SurveyId,
-                    QuestionText = qvm.QuestionText,
-                    QuestionType = qvm.QuestionType,
-                    IsRequired = qvm.IsRequired
-                };
-                _context.Questions.Add(question);
-                await _context.SaveChangesAsync(); // Để lấy QuestionID
+                    UserId = uid,
+                    AddedDate = DateTime.UtcNow
+                });
+                _context.SurveyAllowedUsers.AddRange(allowed);
+                await _context.SaveChangesAsync();
+            }
 
-                foreach (var opt in qvm.Options)
+            return RedirectToAction("MySurveys");
+        }
+
+        public async Task<IActionResult> Edit(int id)
+        {
+            var userId = GetCurrentUserId();
+            var survey = await _context.Surveys
+                .Include(s => s.Questions).ThenInclude(q => q.Options)
+                .Include(s => s.SurveySetting)
+                .Include(s => s.SurveyAllowedUsers)
+                .FirstOrDefaultAsync(s => s.SurveyId == id && s.CreatorUserId == userId);
+
+            if (survey == null) return NotFound();
+
+            var model = new SurveyCreateViewModel
+            {
+                SurveyId = survey.SurveyId,
+                Title = survey.Title,
+                Description = survey.Description,
+                IsPublic = survey.IsPublic,
+                AllowMultipleResponses = survey.SurveySetting?.AllowMultipleResponses ?? false,
+                RequireLogin = survey.SurveySetting?.RequireLogin ?? false,
+                StartDate = survey.SurveySetting?.StartDate,
+                EndDate = survey.SurveySetting?.EndDate,
+                Questions = survey.Questions.Select(q => new SurveyCreateViewModel.QuestionViewModel
                 {
-                    var option = new Option
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType,
+                    IsRequired = q.IsRequired,
+                    Options = q.Options.Select(o => new SurveyCreateViewModel.OptionViewModel
                     {
-                        QuestionId = question.QuestionId,
-                        OptionText = opt.OptionText
-                    };
-                    _context.Options.Add(option);
-                }
+                        OptionText = o.OptionText
+                    }).ToList()
+                }).ToList(),
+                AllowedUserIds = survey.SurveyAllowedUsers?.Select(a => a.UserId).ToList() ?? new(),
+                AllUsers = await _context.Users.ToListAsync()
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.AllUsers = await _context.Users.ToListAsync();
+                return View(model);
+            }
+
+            var userId = GetCurrentUserId();
+            var survey = await _context.Surveys
+                .Include(s => s.Questions).ThenInclude(q => q.Options)
+                .Include(s => s.SurveySetting)
+                .Include(s => s.SurveyAllowedUsers)
+                .FirstOrDefaultAsync(s => s.SurveyId == id && s.CreatorUserId == userId);
+
+            if (survey == null) return NotFound();
+
+            // Cập nhật thông tin chung
+            survey.Title = model.Title;
+            survey.Description = model.Description;
+            survey.IsPublic = model.IsPublic;
+
+            survey.SurveySetting ??= new SurveySetting();
+            survey.SurveySetting.AllowMultipleResponses = model.AllowMultipleResponses;
+            survey.SurveySetting.RequireLogin = model.RequireLogin;
+            survey.SurveySetting.StartDate = model.StartDate;
+            survey.SurveySetting.EndDate = model.EndDate;
+
+            // Xóa câu hỏi và option cũ
+            _context.Options.RemoveRange(survey.Questions.SelectMany(q => q.Options));
+            _context.Questions.RemoveRange(survey.Questions);
+
+            // Thêm câu hỏi mới
+            survey.Questions = model.Questions.Select(q => new Question
+            {
+                QuestionText = q.QuestionText,
+                QuestionType = q.QuestionType,
+                IsRequired = q.IsRequired,
+                Options = q.Options?.Select(o => new Option
+                {
+                    OptionText = o.OptionText
+                }).ToList() ?? new List<Option>()
+            }).ToList();
+
+            // Cập nhật danh sách user được phép tham gia
+            _context.SurveyAllowedUsers.RemoveRange(
+                _context.SurveyAllowedUsers.Where(x => x.SurveyId == survey.SurveyId)
+            );
+
+            if (!model.IsPublic && model.AllowedUserIds != null && model.AllowedUserIds.Any())
+            {
+                _context.SurveyAllowedUsers.AddRange(model.AllowedUserIds.Select(uid => new SurveyAllowedUser
+                {
+                    SurveyId = survey.SurveyId,
+                    UserId = uid,
+                    AddedDate = DateTime.UtcNow
+                }));
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction("MySurveys");
         }
 
-        // GET: Survey/MySurveys
         public async Task<IActionResult> MySurveys()
         {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
-                return Unauthorized();
-
+            var userId = GetCurrentUserId();
             var surveys = await _context.Surveys
-                .Include(s => s.SurveySetting)
                 .Where(s => s.CreatorUserId == userId)
                 .ToListAsync();
 
             return View(surveys);
         }
 
-        // GET: Survey/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Results(int id)
         {
-            if (id == null) return NotFound();
-
+            var userId = GetCurrentUserId();
             var survey = await _context.Surveys
-                .Include(s => s.SurveySetting)
-                .Include(s => s.Questions)
-                .ThenInclude(q => q.Options)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
+                .Include(s => s.Questions).ThenInclude(q => q.Answers)
+                .Include(s => s.Participations)
+                .FirstOrDefaultAsync(s => s.SurveyId == id && s.CreatorUserId == userId);
 
             if (survey == null) return NotFound();
-
-            var model = new SurveyCreateViewModel
-            {
-                Title = survey.Title,
-                Description = survey.Description,
-                IsPublic = survey.IsPublic,
-                AllowMultipleResponses = survey.SurveySetting.AllowMultipleResponses,
-                RequireLogin = survey.SurveySetting.RequireLogin,
-                StartDate = survey.SurveySetting.StartDate,
-                EndDate = survey.SurveySetting.EndDate,
-                Questions = survey.Questions.Select(q => new QuestionViewModel
-                {
-                    QuestionText = q.QuestionText,
-                    QuestionType = q.QuestionType,
-                    IsRequired = q.IsRequired,
-                    Options = q.Options.Select(o => new OptionViewModel
-                    {
-                        OptionText = o.OptionText
-                    }).ToList()
-                }).ToList()
-            };
-
-            ViewBag.SurveyId = survey.SurveyId;
-            return View(model);
-        }
-        // POST: Survey/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var survey = await _context.Surveys
-                .Include(s => s.SurveySetting)
-                .Include(s => s.Questions)
-                .ThenInclude(q => q.Options)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
-
-            if (survey == null)
-                return NotFound();
-
-            // Cập nhật survey
-            survey.Title = model.Title;
-            survey.Description = model.Description;
-            survey.IsPublic = model.IsPublic;
-            survey.LastModifiedDate = DateTime.Now;
-
-            // Cập nhật setting
-            survey.SurveySetting.AllowMultipleResponses = model.AllowMultipleResponses;
-            survey.SurveySetting.RequireLogin = model.RequireLogin;
-            survey.SurveySetting.StartDate = model.StartDate;
-            survey.SurveySetting.EndDate = model.EndDate;
-
-            // Xóa toàn bộ câu hỏi và đáp án cũ
-            _context.Options.RemoveRange(survey.Questions.SelectMany(q => q.Options));
-            _context.Questions.RemoveRange(survey.Questions);
-            await _context.SaveChangesAsync();
-
-            // Thêm mới lại từ ViewModel
-            foreach (var qvm in model.Questions)
-            {
-                var question = new Question
-                {
-                    SurveyId = survey.SurveyId,
-                    QuestionText = qvm.QuestionText,
-                    QuestionType = qvm.QuestionType,
-                    IsRequired = qvm.IsRequired
-                };
-                _context.Questions.Add(question);
-                await _context.SaveChangesAsync(); // để lấy QuestionId
-
-                foreach (var opt in qvm.Options)
-                {
-                    var option = new Option
-                    {
-                        QuestionId = question.QuestionId,
-                        OptionText = opt.OptionText
-                    };
-                    _context.Options.Add(option);
-                }
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("MySurveys");
-        }
-
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                .FirstOrDefaultAsync(m => m.SurveyId == id);
-
-            if (survey == null) return NotFound();
-
-            return View(survey); // View này cần model là Survey
-        }
-        // POST: Survey/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                .ThenInclude(q => q.Options)
-                .Include(s => s.SurveySetting)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
-
-            if (survey != null)
-            {
-                _context.Options.RemoveRange(survey.Questions.SelectMany(q => q.Options));
-                _context.Questions.RemoveRange(survey.Questions);
-                _context.SurveySettings.Remove(survey.SurveySetting);
-                _context.Surveys.Remove(survey);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction("MySurveys");
-        }
-        // GET: Survey/Results/5
-        public async Task<IActionResult> Results(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.Options)
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.Answers)
-                        .ThenInclude(a => a.Option)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
-
-            if (survey == null) return NotFound();
-
-            return View(survey); // Trả về model là Survey
-        }
-
-        //PublicSurveys
-        [Authorize] // Yêu cầu người dùng đăng nhập
-        public async Task<IActionResult> PublicSurveys()
-        {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdStr, out int currentUserId))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var publicOrSharedSurveys = await _context.Surveys
-                .Include(s => s.CreatorUser)
-                .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(u => u.UserId == currentUserId))
-                .ToListAsync();
-
-            return View(publicOrSharedSurveys);
-        }
-
-        //TakeSurvey
-        [HttpGet]
-        public async Task<IActionResult> ViewSurvey(int id)
-        {
-            var survey = await _context.Surveys
-                .Include(s => s.CreatorUser)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
-
-            if (survey == null)
-            {
-                return NotFound();
-            }
-
-            var currentUser = await GetCurrentUserAsync();
-
-            // Nếu là người tạo khảo sát → chuyển sang trang kết quả
-            if (currentUser != null && survey.CreatorUserId == currentUser.UserId)
-            {
-                return RedirectToAction("Results", new { id = survey.SurveyId });
-            }
-
-            // Nếu không phải người tạo → chuyển sang trang tham gia khảo sát
-            return RedirectToAction("TakeSurvey", new { id = survey.SurveyId });
-        }
-
-        private async Task<User?> GetCurrentUserAsync()
-        {
-            if (User.Identity?.IsAuthenticated ?? false)
-            {
-                var username = User.Identity.Name;
-                return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            }
-            return null;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> TakeSurvey(int id)
-        {
-            var currentUser = await GetCurrentUserAsync();
-            var survey = await _context.Surveys
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.Options)
-                .FirstOrDefaultAsync(s => s.SurveyId == id);
-
-            if (survey == null)
-                return NotFound();
-
-            // Kiểm tra nếu người dùng đã tham gia khảo sát trước đó
-            if (currentUser != null)
-            {
-                var existed = await _context.Participations
-                    .AnyAsync(p => p.SurveyId == id && p.UserId == currentUser.UserId);
-                if (existed)
-                {
-                    return RedirectToAction("ThankYou");
-                }
-            }
 
             return View(survey);
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitSurvey(int surveyId, IFormCollection form)
-        {
-            var currentUser = await GetCurrentUserAsync();
-
-            var participation = new Participation
-            {
-                SurveyId = surveyId,
-                UserId = currentUser?.UserId,
-                SubmittedAt = DateTime.Now
-            };
-
-            _context.Participations.Add(participation);
-            await _context.SaveChangesAsync(); // Lưu để có ParticipationId
-
-            foreach (var key in form.Keys)
-            {
-                if (!key.StartsWith("question_")) continue;
-
-                var questionId = int.Parse(key.Split('_')[1]);
-                var values = form[key]; // hỗ trợ cả radio/text và checkbox (nhiều giá trị)
-
-                foreach (var value in values)
-                {
-                    if (string.IsNullOrWhiteSpace(value)) continue; // bỏ qua câu trống
-
-                    var answer = new Answer
-                    {
-                        ParticipationId = participation.ParticipationId,
-                        QuestionId = questionId
-                    };
-
-                    if (int.TryParse(value, out int optionId))
-                    {
-                        answer.OptionId = optionId;
-                    }
-                    else
-                    {
-                        answer.AnswerText = value;
-                    }
-
-                    _context.Answers.Add(answer);
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("ThankYou");
-        }
-
-        [HttpGet]
-        public IActionResult ThankYou()
-        {
-            return View();
-        }
-
-
     }
 }
