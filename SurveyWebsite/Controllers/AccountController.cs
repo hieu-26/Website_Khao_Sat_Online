@@ -53,6 +53,7 @@ namespace SurveyWebsite.Controllers
             HttpContext.Session.SetString("FullName", user.FullName); // Hoặc user.FullName nếu bạn có
             HttpContext.Session.SetInt32("UserID", user.UserId); // Nếu chưa có
 
+            TempData["SuccessMessage"] = $"Đăng nhập thành công, xin chào {user.FullName}!";
 
             return RedirectToAction("Index", "Home");
         }
