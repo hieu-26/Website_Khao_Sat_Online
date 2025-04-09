@@ -1,0 +1,35 @@
+﻿@model List<SurveyWebsite.Models.Survey>
+
+@{
+    ViewData["Title"] = "Khảo sát công khai & chia sẻ";
+}
+
+<h2 class="mb-4 text-center">Khảo sát được chia sẻ hoặc công khai</h2>
+
+@if (!Model.Any())
+{
+        <div class="alert alert-info text-center">
+            Không có khảo sát nào được chia sẻ hoặc công khai dành cho bạn.
+        </div>
+}
+else
+{
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var survey in Model)
+        {
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 rounded-4">
+                            <div class="card-body">
+                                <h5 class="card-title">@survey.Title</h5>
+                                <p class="card-text text-muted">@survey.Description</p>
+                                <small class="text-muted">Tạo bởi: @survey.CreatorUser.FullName (@survey.CreatedDate.ToString("dd/MM/yyyy"))</small>
+                            </div>
+                            <div class="card-footer bg-white border-0 d-flex justify-content-end">
+                                <a asp-action="Results" asp-route-id="@survey.SurveyId" class="btn btn-outline-info btn-sm">Xem chi tiết</a>
+                            </div>
+                        </div>
+                    </div>
+        }
+        </div>
+}
+    

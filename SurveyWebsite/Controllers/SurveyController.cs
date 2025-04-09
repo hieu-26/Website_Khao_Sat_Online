@@ -277,5 +277,23 @@ namespace SurveyWebsite.Controllers
 
             return View(survey); // Trả về model là Survey
         }
+
+        //PublicSurveys
+        [Authorize] // Yêu cầu người dùng đăng nhập
+        public async Task<IActionResult> PublicSurveys()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var publicOrSharedSurveys = await _context.Surveys
+                .Include(s => s.CreatorUser)
+                .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(u => u.UserId == currentUserId))
+                .ToListAsync();
+
+            return View(publicOrSharedSurveys);
+        }
     }
 }
