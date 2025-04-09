@@ -37,10 +37,10 @@ namespace SurveyWebsite.Controllers
 
             // Tạo claims cho người dùng đăng nhập
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()) // Thêm dòng này
-        };
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()) // Thêm dòng này
+            };
 
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -48,6 +48,12 @@ namespace SurveyWebsite.Controllers
             // Đăng nhập bằng cookie
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity));
+
+            HttpContext.Session.SetString("Username", user.Username); // Hoặc user.FullName nếu bạn có
+            HttpContext.Session.SetString("FullName", user.FullName); // Hoặc user.FullName nếu bạn có
+            HttpContext.Session.SetInt32("UserID", user.UserId); // Nếu chưa có
+
+            TempData["SuccessMessage"] = $"Đăng nhập thành công, xin chào {user.FullName}!";
 
             return RedirectToAction("Index", "Home");
         }

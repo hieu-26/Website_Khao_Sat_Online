@@ -1,27 +1,32 @@
 ﻿@* Views/Account/Login.cshtml *@
-<h2>ĐĂNG NHẬP</h2>
 
+@section Styles {
+    <link href="~/css/auth-style.css" rel="stylesheet" />
+}
 @if (ViewBag.Error != null)
 {
-    <div class="alert alert-danger">@ViewBag.Error</div>
+    <div style="color: red; text-align: center;">@ViewBag.Error</div>
 }
 
-<form method="post" id="loginForm">
-    <div class="form-group" id="usernameGroup">
-        <label>Tên đăng nhập:</label>
-        <input type="text" id="Username" name="username" class="form-control" required />
-        <span id="usernameError" class="text-danger" style="display:none;"></span>
-    </div>
+    <div class="auth-wrapper">
+        <form method="post" id="loginForm" class="auth-form">
+        <h2>ĐĂNG NHẬP</h2>
+            <div class="form-group" id="usernameGroup">
+                <label>Tên đăng nhập:</label>
+                <input type="text" id="Username" name="username" class="form-control" required />
+                <span id="usernameError" class="text-danger" style="display:none;"></span>
+            </div>
 
-    <div class="form-group" id="passwordGroup">
-        <label>Mật khẩu:</label>
-        <input type="password" id="Password" name="password" class="form-control" required />
-        <span id="passwordError" class="text-danger" style="display:none;"></span>
-    </div>
+            <div class="form-group" id="passwordGroup">
+                <label>Mật khẩu:</label>
+                <input type="password" id="Password" name="password" class="form-control" required />
+                <span id="passwordError" class="text-danger" style="display:none;"></span>
+            </div>
 
-    <button type="submit" class="btn btn-primary">Đăng nhập</button>
-    <a asp-action="Register" class="btn btn-link">Đăng ký tài khoản</a>
-</form>
+            <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            <a asp-action="Register" class="btn btn-link">Đăng ký tài khoản</a>
+        </form>
+    </div>
 
 @section Scripts {
     <script>
@@ -89,15 +94,4 @@
             }
         });
     </script>
-
-    <style>
-        .has-error input {
-            border-color: red;
-        }
-
-        .text-danger {
-            font-size: small;
-            color: red;
-        }
-    </style>
 }

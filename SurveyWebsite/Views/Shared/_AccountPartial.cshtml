@@ -3,7 +3,7 @@
     @if (Context.Session.GetInt32("UserID") != null)
     {
         <li class="nav-item">
-            <span class="nav-link">Xin chào @Context.Session.GetString("Username")</span>
+            <span class="nav-link">Xin chào @Context.Session.GetString("FullName")</span>
         </li>
         <li class="nav-item">
             <a class="nav-link" asp-controller="Account" asp-action="Logout">Đăng xuất</a>

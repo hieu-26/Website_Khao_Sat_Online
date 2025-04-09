@@ -1,0 +1,44 @@
+﻿@* @model SurveyWebsite.Models.ViewModels.QuestionViewModel *@
+@* @{ *@
+@*     var index = ViewData["Index"]; *@
+@* } *@
+
+@* <div class="border p-3 mb-3 question-item" data-index="@index"> *@
+@*     <div class="d-flex justify-content-between align-items-center"> *@
+@*         <strong>Câu hỏi @(Convert.ToInt32(index) + 1)</strong> *@
+@*         <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">Xoá</button> *@
+@*     </div> *@
+
+@*     <div class="mb-2 mt-2"> *@
+@*         <label class="form-label">Câu hỏi:</label> *@
+@*         <input name="Questions[@index].QuestionText" value="@Model.QuestionText" class="form-control" /> *@
+@*     </div> *@
+
+@*     <div class="mb-2"> *@
+@*         <label class="form-label">Loại câu hỏi:</label> *@
+@*         <select name="Questions[@index].QuestionType" class="form-control" onchange="handleQuestionTypeChange(this)"> *@
+@*             <option value="Trắc nghiệm" selected="@(Model.QuestionType == "Trắc nghiệm")">Trắc nghiệm</option> *@
+@*             <option value="Tự luận" selected="@(Model.QuestionType == "Tự luận")">Tự luận</option> *@
+@*             <option value="Checkbox" selected="@(Model.QuestionType == "Checkbox")">Checkbox</option> *@
+@*         </select> *@
+@*     </div> *@
+
+@*     <div class="mb-2"> *@
+@*         <label class="form-label">Bắt buộc:</label> *@
+@*         <input type="checkbox" name="Questions[@index].IsRequired" @(Model.IsRequired ? "checked" : "") /> *@
+@*     </div> *@
+
+@*     <div class="option-list" style="@(Model.QuestionType == "Tự luận" ? "display:none;" : "")"> *@
+@*         <label class="form-label">Các lựa chọn:</label> *@
+@*         <div class="options-container"> *@
+@*             @for (int j = 0; j < Model.Options.Count; j++) *@
+@*             { *@
+@*                 <div class="input-group mb-2"> *@
+@*                     <input name="Questions[@index].Options[@j].OptionText" value="@Model.Options[j].OptionText" class="form-control" /> *@
+@*                     <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button> *@
+@*                 </div> *@
+@*             } *@
+@*         </div> *@
+@*         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addOption(this)">+ Thêm lựa chọn</button> *@
+@*     </div> *@
+@* </div> *@

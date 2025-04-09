@@ -36,11 +36,21 @@
 
                     <!-- Thanh tìm kiếm-->
                     <div class="search-container mx-3 flex-grow-1">
-                        <div class="search-box">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" placeholder="Tìm kiếm biểu mẫu..." class="search-input">
-                            <i class="fas fa-times clear-search" style="display: none;"></i>
-                        </div>
+                        @* <div class="search-box"> *@
+                        <form asp-controller="Survey" asp-action="Search" method="get" class="search-container mx-3 flex-grow-1">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text"
+                                       name="keyword"
+                                       class="search-input"
+                                       placeholder="Tìm kiếm biểu mẫu..."
+                                       aria-label="Search" />
+                                <i class="fas fa-times clear-search" style="display: none;"></i>
+                            </div>
+                        </form>
+
+
+                        @* </div> *@
                     </div>
 
                     <div class="user-menu d-flex align-items-center">
@@ -65,7 +75,7 @@
                                 <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown"
                                    data-bs-toggle="dropdown" aria-expanded="false">
                                     <img src="~/images/default-avatar.png" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
-                                    <span class="user-name">@Context.Session.GetString("Username")</span>
+                                    <span class="user-name">@Context.Session.GetString("FullName")</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userDropdown">
                                     <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Trang cá nhân</a></li>
@@ -90,8 +100,16 @@
     </header>
 
     <div class="container">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
         <main role="main" class="pb-3">
             @RenderBody()
+
         </main>
     </div>
 
