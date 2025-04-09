@@ -1,4 +1,5 @@
 ﻿@model SurveyWebsite.Models.ViewModels.SurveyCreateViewModel
+
 @{
     ViewData["Title"] = "Chỉnh sửa khảo sát";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -19,22 +20,22 @@
         <textarea asp-for="Description" class="form-control"></textarea>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <label asp-for="IsPublic" class="form-label">Công khai</label>
-            <input asp-for="IsPublic" type="checkbox" class="form-check-input" />
-        </div>
-        <div class="col-md-4">
-            <label asp-for="AllowMultipleResponses" class="form-label">Cho phép trả lời nhiều lần</label>
-            <input asp-for="AllowMultipleResponses" type="checkbox" class="form-check-input" />
-        </div>
-        <div class="col-md-4">
-            <label asp-for="RequireLogin" class="form-label">Bắt buộc đăng nhập</label>
-            <input asp-for="RequireLogin" type="checkbox" class="form-check-input" />
-        </div>
+    <div class="form-check mb-2">
+        <input asp-for="IsPublic" class="form-check-input" />
+        <label asp-for="IsPublic" class="form-check-label">Công khai</label>
     </div>
 
-    <div class="row mb-3">
+    <div class="form-check mb-2">
+        <input asp-for="AllowMultipleResponses" class="form-check-input" />
+        <label asp-for="AllowMultipleResponses" class="form-check-label">Cho phép trả lời nhiều lần</label>
+    </div>
+
+    <div class="form-check mb-4">
+        <input asp-for="RequireLogin" class="form-check-input" />
+        <label asp-for="RequireLogin" class="form-check-label">Bắt buộc đăng nhập</label>
+    </div>
+
+    <div class="row mb-4">
         <div class="col-md-6">
             <label asp-for="StartDate" class="form-label">Ngày bắt đầu</label>
             <input asp-for="StartDate" type="datetime-local" class="form-control" />
@@ -51,45 +52,46 @@
         @for (int i = 0; i < Model.Questions.Count; i++)
         {
             <div class="border p-3 mb-3 question-item" data-index="@i">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between">
                     <strong>Câu hỏi @(i + 1)</strong>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">Xoá câu hỏi</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">Xoá</button>
                 </div>
-                <div class="mb-2 mt-2">
+                <div class="mt-2">
                     <label class="form-label">Câu hỏi:</label>
-                    <input name="Questions[@i].QuestionText" value="@Model.Questions[i].QuestionText" class="form-control" />
+                    <input name="Questions[@i].QuestionText" class="form-control" value="@Model.Questions[i].QuestionText" />
                 </div>
-                <div class="mb-2">
+                <div class="mt-2">
                     <label class="form-label">Loại câu hỏi:</label>
-                    <select name="Questions[@i].QuestionType" class="form-control question-type" onchange="handleQuestionTypeChange(this)">
+                    <select name="Questions[@i].QuestionType" class="form-select question-type" onchange="handleQuestionTypeChange(this)">
                         <option value="Trắc nghiệm" selected="@(Model.Questions[i].QuestionType == "Trắc nghiệm")">Trắc nghiệm</option>
                         <option value="Tự luận" selected="@(Model.Questions[i].QuestionType == "Tự luận")">Tự luận</option>
                         <option value="Checkbox" selected="@(Model.Questions[i].QuestionType == "Checkbox")">Checkbox</option>
                     </select>
                 </div>
-                <div class="mb-2">
-                    <label class="form-label">Bắt buộc:</label>
-                    <input type="checkbox" name="Questions[@i].IsRequired" @(Model.Questions[i].IsRequired ? "checked" : "") />
+                <div class="form-check mt-2 mb-2">
+                    <input type="checkbox" class="form-check-input" name="Questions[@i].IsRequired" @(Model.Questions[i].IsRequired ? "checked" : "") />
+                    <label class="form-check-label">Bắt buộc</label>
                 </div>
                 <div class="option-list" style="@(Model.Questions[i].QuestionType == "Tự luận" ? "display:none;" : "")">
-                    <label class="form-label">Các lựa chọn:</label>
+                    <label class="form-label">Lựa chọn:</label>
                     <div class="options-container">
                         @for (int j = 0; j < Model.Questions[i].Options.Count; j++)
                         {
                             <div class="input-group mb-2">
-                                <input name="Questions[@i].Options[@j].OptionText" value="@Model.Questions[i].Options[j].OptionText" class="form-control" />
+                                <input name="Questions[@i].Options[@j].OptionText" class="form-control" value="@Model.Questions[i].Options[j].OptionText" />
                                 <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
                             </div>
                         }
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addOption(this)">+ Thêm lựa chọn</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOption(this)">+ Thêm lựa chọn</button>
                 </div>
             </div>
         }
     </div>
-    <button type="button" class="btn btn-secondary mb-3" onclick="addQuestion()">+ Thêm câu hỏi</button>
+
+    <button type="button" class="btn btn-secondary mt-2" onclick="addQuestion()">+ Thêm câu hỏi</button>
     <br />
-    <button type="submit" class="btn btn-primary">Lưu chỉnh sửa</button>
+    <button type="submit" class="btn btn-primary mt-3">Lưu chỉnh sửa</button>
 </form>
 
 @section Scripts {
@@ -99,96 +101,79 @@
         function addQuestion() {
             const container = document.getElementById('question-list');
             const qIndex = questionIndex++;
-
             const html = `
-            <div class="border p-3 mb-3 question-item" data-index="${qIndex}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <strong>Câu hỏi ${qIndex + 1}</strong>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">Xoá câu hỏi</button>
-                </div>
-                <div class="mb-2 mt-2">
-                    <label class="form-label">Câu hỏi:</label>
-                    <input name="Questions[${qIndex}].QuestionText" class="form-control" />
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Loại câu hỏi:</label>
-                    <select name="Questions[${qIndex}].QuestionType" class="form-control question-type" onchange="handleQuestionTypeChange(this)">
-                        <option value="Trắc nghiệm">Trắc nghiệm</option>
-                        <option value="Tự luận">Tự luận</option>
-                        <option value="Checkbox">Checkbox</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Bắt buộc:</label>
-                    <input type="checkbox" name="Questions[${qIndex}].IsRequired" />
-                </div>
-                <div class="option-list">
-                    <label class="form-label">Các lựa chọn:</label>
-                    <div class="options-container">
-                        <div class="input-group mb-2">
-                            <input name="Questions[${qIndex}].Options[0].OptionText" class="form-control" />
-                            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
-                        </div>
-                        <div class="input-group mb-2">
-                            <input name="Questions[${qIndex}].Options[1].OptionText" class="form-control" />
-                            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
-                        </div>
+                <div class="border p-3 mb-3 question-item" data-index="${qIndex}">
+                    <div class="d-flex justify-content-between">
+                        <strong>Câu hỏi ${qIndex + 1}</strong>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">Xoá</button>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addOption(this)">+ Thêm lựa chọn</button>
-                </div>
-            </div>`;
-
+                    <div class="mt-2">
+                        <label class="form-label">Câu hỏi:</label>
+                        <input name="Questions[${qIndex}].QuestionText" class="form-control" />
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label">Loại câu hỏi:</label>
+                        <select name="Questions[${qIndex}].QuestionType" class="form-select question-type" onchange="handleQuestionTypeChange(this)">
+                            <option value="Trắc nghiệm">Trắc nghiệm</option>
+                            <option value="Tự luận">Tự luận</option>
+                            <option value="Checkbox">Checkbox</option>
+                        </select>
+                    </div>
+                    <div class="form-check mt-2 mb-2">
+                        <input type="checkbox" class="form-check-input" name="Questions[${qIndex}].IsRequired" />
+                        <label class="form-check-label">Bắt buộc</label>
+                    </div>
+                    <div class="option-list">
+                        <label class="form-label">Lựa chọn:</label>
+                        <div class="options-container">
+                            <div class="input-group mb-2">
+                                <input name="Questions[${qIndex}].Options[0].OptionText" class="form-control" />
+                                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
+                            </div>
+                            <div class="input-group mb-2">
+                                <input name="Questions[${qIndex}].Options[1].OptionText" class="form-control" />
+                                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOption(this)">+ Thêm lựa chọn</button>
+                    </div>
+                </div>`;
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        function removeQuestion(button) {
-            const questionDiv = button.closest('.question-item');
-            questionDiv.remove();
+        function removeQuestion(btn) {
+            btn.closest('.question-item').remove();
         }
 
-        function addOption(button) {
-            const questionDiv = button.closest('.question-item');
-            const index = questionDiv.dataset.index;
-            const optionsContainer = questionDiv.querySelector('.options-container');
-            const optionCount = optionsContainer.children.length;
+        function addOption(btn) {
+            const container = btn.closest('.question-item').querySelector('.options-container');
+            const index = btn.closest('.question-item').dataset.index;
+            const count = container.children.length;
 
             const optionHtml = `
                 <div class="input-group mb-2">
-                    <input name="Questions[${index}].Options[${optionCount}].OptionText" class="form-control" />
+                    <input name="Questions[${index}].Options[${count}].OptionText" class="form-control" />
                     <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
-                </div>
-            `;
-            optionsContainer.insertAdjacentHTML('beforeend', optionHtml);
+                </div>`;
+            container.insertAdjacentHTML('beforeend', optionHtml);
         }
 
-        function removeOption(button) {
-            const optionGroup = button.closest('.input-group');
-            optionGroup.remove();
+        function removeOption(btn) {
+            btn.closest('.input-group').remove();
         }
 
         function handleQuestionTypeChange(select) {
-            const questionDiv = select.closest('.question-item');
-            const index = questionDiv.dataset.index;
-            const optionList = questionDiv.querySelector('.option-list');
-            const optionsContainer = optionList.querySelector('.options-container');
-            const questionType = select.value;
-
-            if (questionType === "Tự luận") {
+            const qItem = select.closest('.question-item');
+            const optionList = qItem.querySelector('.option-list');
+            const optionsContainer = qItem.querySelector('.options-container');
+            if (select.value === "Tự luận") {
                 optionList.style.display = "none";
                 optionsContainer.innerHTML = "";
             } else {
                 optionList.style.display = "block";
-                if (optionsContainer.children.length < 2) {
-                    optionsContainer.innerHTML = `
-                        <div class="input-group mb-2">
-                            <input name="Questions[${index}].Options[0].OptionText" class="form-control" />
-                            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
-                        </div>
-                        <div class="input-group mb-2">
-                            <input name="Questions[${index}].Options[1].OptionText" class="form-control" />
-                            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">X</button>
-                        </div>
-                    `;
+                if (optionsContainer.children.length === 0) {
+                    addOption(qItem.querySelector('.btn-outline-primary'));
+                    addOption(qItem.querySelector('.btn-outline-primary'));
                 }
             }
         }

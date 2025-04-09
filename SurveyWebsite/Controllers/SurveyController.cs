@@ -170,7 +170,10 @@ namespace SurveyWebsite.Controllers
         public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
         {
             if (!ModelState.IsValid)
+            {
+                ViewBag.SurveyId = id;
                 return View(model);
+            }
 
             var survey = await _context.Surveys
                 .Include(s => s.SurveySetting)
@@ -193,33 +196,38 @@ namespace SurveyWebsite.Controllers
             survey.SurveySetting.StartDate = model.StartDate;
             survey.SurveySetting.EndDate = model.EndDate;
 
-            // Xóa toàn bộ câu hỏi và đáp án cũ
+            // Xóa câu hỏi + đáp án cũ
             _context.Options.RemoveRange(survey.Questions.SelectMany(q => q.Options));
             _context.Questions.RemoveRange(survey.Questions);
             await _context.SaveChangesAsync();
 
-            // Thêm mới lại từ ViewModel
+            // Thêm lại các câu hỏi và đáp án từ model
             foreach (var qvm in model.Questions)
             {
+                if (string.IsNullOrWhiteSpace(qvm.QuestionText))
+                    continue;
+
                 var question = new Question
                 {
-                    SurveyId = survey.SurveyId,
+                    SurveyId = id,
                     QuestionText = qvm.QuestionText,
                     QuestionType = qvm.QuestionType,
-                    IsRequired = qvm.IsRequired
+                    IsRequired = qvm.IsRequired,
+                    Options = new List<Option>()
                 };
-                _context.Questions.Add(question);
-                await _context.SaveChangesAsync(); // để lấy QuestionId
 
                 foreach (var opt in qvm.Options)
                 {
-                    var option = new Option
+                    if (!string.IsNullOrWhiteSpace(opt.OptionText))
                     {
-                        QuestionId = question.QuestionId,
-                        OptionText = opt.OptionText
-                    };
-                    _context.Options.Add(option);
+                        question.Options.Add(new Option
+                        {
+                            OptionText = opt.OptionText
+                        });
+                    }
                 }
+
+                _context.Questions.Add(question);
             }
 
             await _context.SaveChangesAsync();
