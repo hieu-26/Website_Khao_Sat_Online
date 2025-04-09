@@ -25,7 +25,7 @@ else
                                 <small class="text-muted">Tạo bởi: @survey.CreatorUser.FullName (@survey.CreatedDate.ToString("dd/MM/yyyy"))</small>
                             </div>
                             <div class="card-footer bg-white border-0 d-flex justify-content-end">
-                                <a asp-action="Results" asp-route-id="@survey.SurveyId" class="btn btn-outline-info btn-sm">Xem chi tiết</a>
+                                <a asp-controller="Survey" asp-action="ViewSurvey" asp-route-id="@survey.SurveyId" class="btn btn-outline-primary">Xem chi tiết</a>
                             </div>
                         </div>
                     </div>

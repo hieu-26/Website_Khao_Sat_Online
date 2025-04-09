@@ -295,5 +295,125 @@ namespace SurveyWebsite.Controllers
 
             return View(publicOrSharedSurveys);
         }
+
+        //TakeSurvey
+        [HttpGet]
+        public async Task<IActionResult> ViewSurvey(int id)
+        {
+            var survey = await _context.Surveys
+                .Include(s => s.CreatorUser)
+                .FirstOrDefaultAsync(s => s.SurveyId == id);
+
+            if (survey == null)
+            {
+                return NotFound();
+            }
+
+            var currentUser = await GetCurrentUserAsync();
+
+            // Nếu là người tạo khảo sát → chuyển sang trang kết quả
+            if (currentUser != null && survey.CreatorUserId == currentUser.UserId)
+            {
+                return RedirectToAction("Results", new { id = survey.SurveyId });
+            }
+
+            // Nếu không phải người tạo → chuyển sang trang tham gia khảo sát
+            return RedirectToAction("TakeSurvey", new { id = survey.SurveyId });
+        }
+
+        private async Task<User?> GetCurrentUserAsync()
+        {
+            if (User.Identity?.IsAuthenticated ?? false)
+            {
+                var username = User.Identity.Name;
+                return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            }
+            return null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TakeSurvey(int id)
+        {
+            var currentUser = await GetCurrentUserAsync();
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Options)
+                .FirstOrDefaultAsync(s => s.SurveyId == id);
+
+            if (survey == null)
+                return NotFound();
+
+            // Kiểm tra nếu người dùng đã tham gia khảo sát trước đó
+            if (currentUser != null)
+            {
+                var existed = await _context.Participations
+                    .AnyAsync(p => p.SurveyId == id && p.UserId == currentUser.UserId);
+                if (existed)
+                {
+                    return RedirectToAction("ThankYou");
+                }
+            }
+
+            return View(survey);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitSurvey(int surveyId, IFormCollection form)
+        {
+            var currentUser = await GetCurrentUserAsync();
+
+            var participation = new Participation
+            {
+                SurveyId = surveyId,
+                UserId = currentUser?.UserId,
+                SubmittedAt = DateTime.Now
+            };
+
+            _context.Participations.Add(participation);
+            await _context.SaveChangesAsync(); // Lưu để có ParticipationId
+
+            foreach (var key in form.Keys)
+            {
+                if (!key.StartsWith("question_")) continue;
+
+                var questionId = int.Parse(key.Split('_')[1]);
+                var values = form[key]; // hỗ trợ cả radio/text và checkbox (nhiều giá trị)
+
+                foreach (var value in values)
+                {
+                    if (string.IsNullOrWhiteSpace(value)) continue; // bỏ qua câu trống
+
+                    var answer = new Answer
+                    {
+                        ParticipationId = participation.ParticipationId,
+                        QuestionId = questionId
+                    };
+
+                    if (int.TryParse(value, out int optionId))
+                    {
+                        answer.OptionId = optionId;
+                    }
+                    else
+                    {
+                        answer.AnswerText = value;
+                    }
+
+                    _context.Answers.Add(answer);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("ThankYou");
+        }
+
+        [HttpGet]
+        public IActionResult ThankYou()
+        {
+            return View();
+        }
+
+
     }
 }
