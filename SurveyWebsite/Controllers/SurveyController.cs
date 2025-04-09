@@ -434,6 +434,7 @@ namespace SurveyWebsite.Controllers
 
             var surveys = _context.Surveys
                 .Include(s => s.Participations)
+                .Include(s => s.CreatorUser)
                 .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(au => au.UserId == userId));
 
             if (!string.IsNullOrEmpty(keyword))

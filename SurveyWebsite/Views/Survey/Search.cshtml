@@ -24,18 +24,22 @@
         @foreach (var survey in Model.Surveys)
         {
             <div class="col">
-                <div class="card h-100 shadow-sm">
+                <div class="card h-100 shadow-sm border-0 rounded-4">
                     <div class="card-body">
                         <h5 class="card-title">@survey.Title</h5>
-                        <p class="card-text">@survey.Description</p>
+                        <p class="card-text text-muted">@survey.Description</p>
+                        <small class="text-muted">
+                            Tạo bởi: @survey.CreatorUser?.FullName (@survey.CreatedDate.ToString("dd/MM/yyyy"))
+                        </small>
                     </div>
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        <small class="text-muted">@survey.CreatedDate.ToString("dd/MM/yyyy")</small>
-                        <span class="badge bg-secondary">@survey.Participations?.Count ?? 0 người tham gia</span>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">@((survey.Participations?.Count ?? 0) + " người tham gia")</span>
+                        <a asp-controller="Survey" asp-action="ViewSurvey" asp-route-id="@survey.SurveyId" class="btn btn-outline-primary btn-sm">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
         }
+
     </div>
 
     <!-- Phân trang -->
