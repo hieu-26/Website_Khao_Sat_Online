@@ -1,5 +1,34 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<Survey>
 @{
+    ViewData["Title"] = "Khảo sát của tôi";
+}
+
+<h2 class="mb-4 text-center">Khảo sát của tôi</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        Bạn chưa tạo biểu mẫu nào. <a asp-action="Create" class="btn btn-sm btn-success ml-2">Tạo ngay</a>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var survey in Model)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4">
+                    <div class="card-body">
+                        <h5 class="card-title">@survey.Title</h5>
+                        <p class="card-text text-muted">@survey.Description</p>
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-between">
+                        <a asp-action="Results" asp-route-id="@survey.SurveyId" class="btn btn-outline-info btn-sm">Chi tiết</a>
+                        <a asp-action="Edit" asp-route-id="@survey.SurveyId" class="btn btn-outline-primary btn-sm">Chỉnh sửa</a>
+                        <a asp-action="Delete" asp-route-id="@survey.SurveyId" class="btn btn-outline-danger btn-sm">Xóa</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }

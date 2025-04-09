@@ -1,5 +1,21 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@* Views/Shared/_AccountPartial.cshtml *@
+<ul class="navbar-nav">
+    @if (Context.Session.GetInt32("UserID") != null)
+    {
+        <li class="nav-item">
+            <span class="nav-link">Xin chào @Context.Session.GetString("Username")</span>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Account" asp-action="Logout">Đăng xuất</a>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Account" asp-action="Register">Đăng ký</a>
+        </li>
+    }
+</ul>

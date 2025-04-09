@@ -1,35 +1,94 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SurveyWebsite</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - Hệ thống khảo sát trực tuyến</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SurveyWebsite.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    @RenderSection("Styles", required: false)
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SurveyWebsite</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+            <div class="container">
+                <!-- Thay logo "Khảo sát Online" bằng icon Survey -->
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-poll"></i> Hệ thống khảo sát
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="navbar-collapse collapse d-flex justify-content-between align-items-center w-100">
+                    <ul class="navbar-nav">
+                        <!-- Thêm icon thông báo và thanh menu -->
+                        <!-- Thanh menu -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" href="#"><i class="fas fa-bars"></i></a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" href="#"><i class="fas fa-bell"></i>   </a>
                         </li>
+
                     </ul>
+
+                    <!-- Thanh tìm kiếm-->
+                    <div class="search-container mx-3 flex-grow-1">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" placeholder="Tìm kiếm biểu mẫu..." class="search-input">
+                            <i class="fas fa-times clear-search" style="display: none;"></i>
+                        </div>
+                    </div>
+
+                    <div class="user-menu d-flex align-items-center">
+                        @* @if (Context.Session.GetInt32("UserId") != null)  Đoạn này không chạy được*@
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @* <div class="user-profile"> *@
+                            @*     <!-- Hiển thị ảnh hoặc tên người dùng --> *@
+                            @*     <img src="~/images/default-avatar.png" alt="Avatar" class="user-avatar"> *@
+                            @*     <span class="user-name">@Context.Session.GetString("Username")</span> *@
+                            @*     <i class="fas fa-caret-down"></i> *@
+
+                            @*     <div class="dropdown-menu"> *@
+                            @*         <a href="#"><i class="fas fa-user"></i> Trang cá nhân</a> *@
+                            @*         <a href="#"><i class="fas fa-cog"></i> Cài đặt</a> *@
+                            @*         <div class="divider"></div> *@
+                            @*         <a asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a> *@
+                            @*     </div> *@
+                            @* </div> *@
+
+                            <div class="dropdown user-profile">
+                                <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <img src="~/images/default-avatar.png" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
+                                    <span class="user-name">@Context.Session.GetString("Username")</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Trang cá nhân</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Cài đặt</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                                </ul>
+                            </div>
+
+                        }
+                        else
+                        {
+                            <div class="auth-buttons">
+                                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">Đăng nhập</a>
+                                <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Đăng ký</a>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -38,12 +97,12 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - SurveyWebsite - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year - Hệ thống khảo sát trực tuyến
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-</html>
+</html> 

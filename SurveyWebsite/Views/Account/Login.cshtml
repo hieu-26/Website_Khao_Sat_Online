@@ -1,5 +1,103 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@* Views/Account/Login.cshtml *@
+<h2>ĐĂNG NHẬP</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form method="post" id="loginForm">
+    <div class="form-group" id="usernameGroup">
+        <label>Tên đăng nhập:</label>
+        <input type="text" id="Username" name="username" class="form-control" required />
+        <span id="usernameError" class="text-danger" style="display:none;"></span>
+    </div>
+
+    <div class="form-group" id="passwordGroup">
+        <label>Mật khẩu:</label>
+        <input type="password" id="Password" name="password" class="form-control" required />
+        <span id="passwordError" class="text-danger" style="display:none;"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Đăng nhập</button>
+    <a asp-action="Register" class="btn btn-link">Đăng ký tài khoản</a>
+</form>
+
+@section Scripts {
+    <script>
+        // Lắng nghe sự kiện blur để kiểm tra lỗi khi người dùng rời khỏi trường
+        document.getElementById("Username").addEventListener("blur", function() {
+            validateUsername();
+        });
+
+        document.getElementById("Password").addEventListener("blur", function() {
+            validatePassword();
+        });
+
+        // Lắng nghe sự kiện click để ẩn lỗi khi người dùng click vào trường nhập liệu
+        document.getElementById("Username").addEventListener("click", function() {
+            document.getElementById("usernameError").style.display = "none";
+            document.getElementById("usernameGroup").classList.remove("has-error");
+        });
+
+        document.getElementById("Password").addEventListener("click", function() {
+            document.getElementById("passwordError").style.display = "none";
+            document.getElementById("passwordGroup").classList.remove("has-error");
+        });
+
+        // Hàm kiểm tra lỗi cho Username
+        function validateUsername() {
+            var username = document.getElementById("Username").value;
+            var errorElement = document.getElementById("usernameError");
+            var usernameGroup = document.getElementById("usernameGroup");
+
+            if (username.trim() === "") {
+                errorElement.style.display = "block";
+                usernameGroup.classList.add("has-error");
+                errorElement.textContent = "Tên đăng nhập không được để trống.";
+                return false;
+            }
+
+            errorElement.style.display = "none";
+            usernameGroup.classList.remove("has-error");
+            return true;
+        }
+
+        // Hàm kiểm tra lỗi cho Password
+        function validatePassword() {
+            var password = document.getElementById("Password").value;
+            var errorElement = document.getElementById("passwordError");
+            var passwordGroup = document.getElementById("passwordGroup");
+
+            if (password.trim() === "") {
+                errorElement.style.display = "block";
+                passwordGroup.classList.add("has-error");
+                errorElement.textContent = "Mật khẩu không được để trống.";
+                return false;
+            }
+
+            errorElement.style.display = "none";
+            passwordGroup.classList.remove("has-error");
+            return true;
+        }
+
+        // Ngừng việc submit form nếu có lỗi
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            if (!validateUsername() || !validatePassword()) {
+                event.preventDefault(); // Ngừng gửi form nếu có lỗi
+                alert("Vui lòng kiểm tra lại các thông tin.");
+            }
+        });
+    </script>
+
+    <style>
+        .has-error input {
+            border-color: red;
+        }
+
+        .text-danger {
+            font-size: small;
+            color: red;
+        }
+    </style>
 }

@@ -1,5 +1,36 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<SurveyWebsite.Models.Survey>
 @{
+    ViewData["Title"] = "Kết quả tìm kiếm";
+}
+
+<h2>Kết quả tìm kiếm</h2>
+
+@if (!Model.Any())
+{
+    <p>Không tìm thấy biểu mẫu nào phù hợp với từ khóa của bạn.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Tiêu đề</th>
+                <th>Ngày tạo</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var survey in Model)
+            {
+                <tr>
+                    <td>@survey.Title</td>
+                    <td>@survey.CreatedDate.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@survey.SurveyId">Sửa</a> |
+                        <a asp-action="Delete" asp-route-id="@survey.SurveyId">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }

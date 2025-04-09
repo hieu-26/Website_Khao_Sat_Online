@@ -1,5 +1,125 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model Survey
 @{
+    ViewData["Title"] = "Kết quả khảo sát";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="text-center mb-4">@Model.Title - Kết quả khảo sát</h2>
+
+<div class="row">
+    <!-- DANH SÁCH CÂU HỎI -->
+    <div class="col-md-6 border-end">
+        <h4 class="text-primary">Danh sách câu hỏi</h4>
+        <div class="list-group">
+            @foreach (var q in Model.Questions)
+            {
+                <div class="list-group-item mb-2 shadow-sm rounded-3">
+                    <strong>@q.QuestionText</strong>
+                    @if (q.Options != null && q.Options.Any())
+                    {
+                        <span class="badge bg-info text-dark ms-2">Trắc nghiệm</span>
+                        <ul class="mb-1 mt-2">
+                            @foreach (var opt in q.Options)
+                            {
+                                <li>@opt.OptionText</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary ms-2">Tự luận</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- PHÂN TÍCH TRẢ LỜI -->
+    <div class="col-md-6">
+        <h4 class="text-success">Phân tích câu trả lời</h4>
+        @foreach (var q in Model.Questions)
+        {
+            <div class="mb-4 p-3 border rounded shadow-sm">
+                <h6 class="fw-bold">@q.QuestionText</h6>
+
+                @if (q.Options != null && q.Options.Any())
+                {
+                    // Trắc nghiệm: Hiển thị biểu đồ
+                    var answerGroups = q.Answers
+                    .Where(a => a.Option != null)
+                    .GroupBy(a => a.Option.OptionText)
+                    .Select(g => new { OptionText = g.Key, Count = g.Count() })
+                    .ToList();
+
+                    @if (answerGroups.Any())
+                    {
+                        <canvas id="chart-@q.QuestionId" height="200"></canvas>
+
+                        <script>
+                            const ctx@q.QuestionId = document.getElementById('chart-@q.QuestionId').getContext('2d');
+                            new Chart(ctx@q.QuestionId, {
+                                type: 'bar',
+                                data: {
+                                    labels: [@string.Join(",", answerGroups.Select(g => $"\"{g.OptionText}\""))],
+                                    datasets: [{
+                                        label: 'Số lượt chọn',
+                                        data: [@string.Join(",", answerGroups.Select(g => g.Count))],
+                                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                precision: 0
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        </script>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Chưa có câu trả lời nào.</p>
+                    }
+                }
+                else
+                {
+                    // Tự luận: Hiển thị danh sách câu trả lời text
+                    var textAnswers = q.Answers
+                    .Where(a => !string.IsNullOrEmpty(a.AnswerText))
+                    .Select(a => a.AnswerText)
+                    .ToList();
+
+                    @if (textAnswers.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var ans in textAnswers)
+                            {
+                                <li class="list-group-item">📝 @ans</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Chưa có câu trả lời nào.</p>
+                    }
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 }
