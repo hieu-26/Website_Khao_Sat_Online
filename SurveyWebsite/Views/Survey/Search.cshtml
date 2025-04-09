@@ -1,36 +1,59 @@
-﻿@model List<SurveyWebsite.Models.Survey>
+﻿@model SurveyWebsite.Models.ViewModels.SearchSurveyViewModel
 @{
-    ViewData["Title"] = "Kết quả tìm kiếm";
+    ViewData["Title"] = "Tìm kiếm khảo sát";
 }
 
-<h2>Kết quả tìm kiếm</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">Kết quả tìm kiếm cho: <strong>@Model.Keyword</strong></h2>
 
-@if (!Model.Any())
-{
-    <p>Không tìm thấy biểu mẫu nào phù hợp với từ khóa của bạn.</p>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Tiêu đề</th>
-                <th>Ngày tạo</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var survey in Model)
-            {
-                <tr>
-                    <td>@survey.Title</td>
-                    <td>@survey.CreatedDate.ToString("dd/MM/yyyy")</td>
-                    <td>
-                        <a asp-action="Edit" asp-route-id="@survey.SurveyId">Sửa</a> |
-                        <a asp-action="Delete" asp-route-id="@survey.SurveyId">Xóa</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    <!-- Chỉ giữ lại dropdown sortOrder -->
+    <form asp-action="Search" method="get" class="row mb-4">
+        <input type="hidden" name="keyword" value="@Model.Keyword" />
+        <div class="col-md-4 offset-md-8">
+            <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                <option value="date_desc" selected="@(Model.SortOrder == "date_desc")">Mới nhất</option>
+                <option value="date_asc" selected="@(Model.SortOrder == "date_asc")">Cũ nhất</option>
+                <option value="participants_desc" selected="@(Model.SortOrder == "participants_desc")">Nhiều người tham gia</option>
+                <option value="participants_asc" selected="@(Model.SortOrder == "participants_asc")">Ít người tham gia</option>
+            </select>
+        </div>
+    </form>
+
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var survey in Model.Surveys)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@survey.Title</h5>
+                        <p class="card-text">@survey.Description</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">@survey.CreatedDate.ToString("dd/MM/yyyy")</small>
+                        <span class="badge bg-secondary">@survey.Participations?.Count ?? 0 người tham gia</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Phân trang -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Search"
+                           asp-route-keyword="@Model.Keyword"
+                           asp-route-sortOrder="@Model.SortOrder"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

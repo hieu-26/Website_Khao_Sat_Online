@@ -5,6 +5,9 @@ using System.Security.Claims;
 using SurveyWebsite.Models;
 using SurveyWebsite.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using X.PagedList;
+using X.PagedList.Extensions;
+
 
 
 namespace SurveyWebsite.Controllers
@@ -421,6 +424,55 @@ namespace SurveyWebsite.Controllers
         {
             return View();
         }
+
+
+        //Chức năng tìm kiếm
+        public IActionResult Search(string? keyword, string? sortOrder, int page = 1)
+        {
+            int pageSize = 9;
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            var surveys = _context.Surveys
+                .Include(s => s.Participations)
+                .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(au => au.UserId == userId));
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.ToLower();
+                surveys = surveys.Where(s =>
+                    s.Title.ToLower().Contains(keyword) ||
+                    s.Description.ToLower().Contains(keyword));
+            }
+
+            // Sắp xếp
+            surveys = sortOrder switch
+            {
+                "date_asc" => surveys.OrderBy(s => s.CreatedDate),
+                "participants_desc" => surveys.OrderByDescending(s => s.Participations.Count),
+                "participants_asc" => surveys.OrderBy(s => s.Participations.Count),
+                _ => surveys.OrderByDescending(s => s.CreatedDate), // Mặc định: mới nhất
+            };
+
+            int totalSurveys = surveys.Count();
+            var pagedSurveys = surveys
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var viewModel = new SearchSurveyViewModel
+            {
+                Keyword = keyword,
+                SortOrder = sortOrder,
+                Page = page,
+                PageSize = pageSize,
+                Surveys = pagedSurveys,
+                TotalPages = (int)Math.Ceiling((double)totalSurveys / pageSize)
+            };
+
+            return View(viewModel);
+        }
+
+
 
 
     }
