@@ -35,6 +35,7 @@ namespace SurveyWebsite.Controllers
             return View(model);
         }
 
+//THÊM
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -113,6 +114,8 @@ namespace SurveyWebsite.Controllers
             return RedirectToAction("MySurveys");
         }
 
+
+//SỬA
         public async Task<IActionResult> Edit(int id)
         {
             var userId = GetCurrentUserId();
@@ -253,6 +256,68 @@ namespace SurveyWebsite.Controllers
             return View(survey);
         }
 
+//XOÁ
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                .FirstOrDefaultAsync(m => m.SurveyId == id);
+
+            if (survey == null) return NotFound();
+
+            return View(survey); // View này cần model là Survey
+        }
+        // POST: Survey/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(s => s.SurveySetting)
+                .Include(s => s.SurveyAllowedUsers)
+                .Include(s => s.Participations)
+                    .ThenInclude(p => p.Answers)
+                .FirstOrDefaultAsync(s => s.SurveyId == id);
+
+            if (survey != null)
+            {
+                // Xóa các answer
+                var allAnswers = survey.Participations.SelectMany(p => p.Answers).ToList();
+                _context.Answers.RemoveRange(allAnswers);
+
+                // Xóa participation
+                _context.Participations.RemoveRange(survey.Participations);
+
+                // Xóa options
+                var allOptions = survey.Questions.SelectMany(q => q.Options).ToList();
+                _context.Options.RemoveRange(allOptions);
+
+                // Xóa questions
+                _context.Questions.RemoveRange(survey.Questions);
+
+                // Xóa setting nếu có
+                if (survey.SurveySetting != null)
+                    _context.SurveySettings.Remove(survey.SurveySetting);
+
+                // Xóa danh sách user được phép nếu có
+                _context.SurveyAllowedUsers.RemoveRange(survey.SurveyAllowedUsers);
+
+                // Xóa khảo sát
+                _context.Surveys.Remove(survey);
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("MySurveys");
+        }
+
+
+
+        //THAM GIA 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitSurvey(int surveyId, IFormCollection form)
@@ -338,7 +403,7 @@ namespace SurveyWebsite.Controllers
             return View(publicOrSharedSurveys);
         }
 
-        //TakeSurvey
+//XEM KHẢO SÁT
         [HttpGet]
         public async Task<IActionResult> ViewSurvey(int id)
         {
@@ -397,7 +462,7 @@ namespace SurveyWebsite.Controllers
         }
 
 
-        //Chức năng tìm kiếm
+//TÌM KIẾM
         public IActionResult Search(string? keyword, string? sortOrder, int page = 1)
         {
             int pageSize = 9;
