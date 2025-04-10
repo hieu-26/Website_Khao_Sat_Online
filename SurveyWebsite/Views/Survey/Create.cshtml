@@ -153,24 +153,6 @@
 </div>
 @section Scripts {
 <script>
-            document.querySelector('form').addEventListener('submit', function(e) {
-            // Lấy tất cả dữ liệu form
-            const formData = new FormData(this);
-
-            // Convert thành object để dễ đọc
-            const formObject = {};
-            formData.forEach((value, key) => {
-                formObject[key] = value;
-            });
-
-            console.log('Dữ liệu form trước khi submit:', formObject);
-
-            // Nếu muốn xem chi tiết hơn
-            console.log('Chi tiết dữ liệu form:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
-        });
     function updateQuestionIndexes() {
         const questionItems = document.querySelectorAll(".question-item");
         questionItems.forEach((qItem, i) => {

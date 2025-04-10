@@ -35,74 +35,6 @@ namespace SurveyWebsite.Controllers
             return View(model);
         }
 
-        //Phiên bản chưa sửa option
-
-        /*[HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(SurveyCreateViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                // Kiểm tra lỗi trong ModelState
-                var errors = ModelState.Values.SelectMany(v => v.Errors);
-                foreach (var error in errors)
-                {
-                    Console.WriteLine($"Error: {error.ErrorMessage}");
-                }
-            }
-            if (!ModelState.IsValid)
-            {
-                model.AllUsers = _context.Users.ToList();
-                return View(model);
-            }
-
-            var userId = GetCurrentUserId();
-
-            var survey = new Survey
-            {
-                Title = model.Title,
-                Description = model.Description,
-                IsPublic = model.IsPublic,
-                CreatedDate = DateTime.UtcNow,
-                CreatorUserId = userId,
-                SurveySetting = new SurveySetting
-                {
-                    AllowMultipleResponses = model.AllowMultipleResponses,
-                    RequireLogin = model.RequireLogin,
-                    StartDate = model.StartDate,
-                    EndDate = model.EndDate
-                },
-                Questions = model.Questions.Select(q => new Question
-                {
-                    QuestionId = q.QuestionId == 0 ? 0 : q.QuestionId,
-                    QuestionText = q.QuestionText,
-                    QuestionType = q.QuestionType,
-                    IsRequired = q.IsRequired,
-                    Options = q.Options?.Select(o => new Option
-                    {
-                        OptionId = o.OptionId == 0 ? 0 : o.OptionId,
-                        OptionText = o.OptionText
-                    }).ToList() ?? new List<Option>()
-                }).ToList()
-            };
-
-            _context.Surveys.Add(survey);
-            await _context.SaveChangesAsync();
-
-            if (!model.IsPublic && model.AllowedUserIds != null && model.AllowedUserIds.Any())
-            {
-                var allowed = model.AllowedUserIds.Select(uid => new SurveyAllowedUser
-                {
-                    SurveyId = survey.SurveyId,
-                    UserId = uid,
-                    AddedDate = DateTime.UtcNow
-                });
-                _context.SurveyAllowedUsers.AddRange(allowed);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction("MySurveys");
-        }*/
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -221,73 +153,7 @@ namespace SurveyWebsite.Controllers
             return View(model);
         }
 
-        //Phiên bản edit chưa sửa option
 
-        /*[HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                model.AllUsers = await _context.Users.ToListAsync();
-                return View(model);
-            }
-
-            var userId = GetCurrentUserId();
-            var survey = await _context.Surveys
-                .Include(s => s.Questions).ThenInclude(q => q.Options)
-                .Include(s => s.SurveySetting)
-                .Include(s => s.SurveyAllowedUsers)
-                .FirstOrDefaultAsync(s => s.SurveyId == id && s.CreatorUserId == userId);
-
-            if (survey == null) return NotFound();
-
-            // Cập nhật thông tin chung
-            survey.Title = model.Title;
-            survey.Description = model.Description;
-            survey.IsPublic = model.IsPublic;
-
-            survey.SurveySetting ??= new SurveySetting();
-            survey.SurveySetting.AllowMultipleResponses = model.AllowMultipleResponses;
-            survey.SurveySetting.RequireLogin = model.RequireLogin;
-            survey.SurveySetting.StartDate = model.StartDate;
-            survey.SurveySetting.EndDate = model.EndDate;
-
-            // Xóa câu hỏi và option cũ
-            _context.Options.RemoveRange(survey.Questions.SelectMany(q => q.Options));
-            _context.Questions.RemoveRange(survey.Questions);
-
-            // Thêm câu hỏi mới
-            survey.Questions = model.Questions.Select(q => new Question
-            {
-                QuestionText = q.QuestionText,
-                QuestionType = q.QuestionType,
-                IsRequired = q.IsRequired,
-                Options = q.Options?.Select(o => new Option
-                {
-                    OptionId = o.OptionId == 0 ? 0 : o.OptionId,
-                    OptionText = o.OptionText
-                }).ToList() ?? new List<Option>()
-            }).ToList();
-
-            // Cập nhật danh sách user được phép tham gia
-            _context.SurveyAllowedUsers.RemoveRange(
-                _context.SurveyAllowedUsers.Where(x => x.SurveyId == survey.SurveyId)
-            );
-
-            if (!model.IsPublic && model.AllowedUserIds != null && model.AllowedUserIds.Any())
-            {
-                _context.SurveyAllowedUsers.AddRange(model.AllowedUserIds.Select(uid => new SurveyAllowedUser
-                {
-                    SurveyId = survey.SurveyId,
-                    UserId = uid,
-                    AddedDate = DateTime.UtcNow
-                }));
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("MySurveys");
-        }*/
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -321,11 +187,17 @@ namespace SurveyWebsite.Controllers
             survey.SurveySetting.StartDate = model.StartDate;
             survey.SurveySetting.EndDate = model.EndDate;
 
+            // Xóa các option cũ trước
+            var optionsToDelete = survey.Questions.SelectMany(q => q.Options).ToList();
+            _context.Options.RemoveRange(optionsToDelete);
+
             // Xóa câu hỏi cũ và thêm mới
             _context.Questions.RemoveRange(survey.Questions);
+            await _context.SaveChangesAsync(); // Cập nhật xóa
 
             survey.Questions = model.Questions.Select(q => new Question
             {
+                SurveyId = survey.SurveyId,
                 QuestionText = q.QuestionText,
                 QuestionType = q.QuestionType,
                 IsRequired = q.IsRequired,
