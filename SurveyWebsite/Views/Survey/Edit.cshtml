@@ -7,7 +7,10 @@
 <div class="container mt-4">
     <h2 class="mb-4">@ViewData["Title"]</h2>
 
-    <form asp-action="@(Model.SurveyId == 0 ? "Create" : "Edit")" method="post">
+    <!-- Thêm validation summary để hiển thị lỗi từ server -->
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <form asp-action="@(Model.SurveyId == 0 ? "Create" : "Edit")" method="post" id="surveyForm">
         @if (Model.SurveyId != 0)
         {
             <input type="hidden" asp-for="SurveyId" />
@@ -22,7 +25,7 @@
                 <div class="mb-3">
                     <label asp-for="Title" class="form-label">Tiêu đề *</label>
                     <input asp-for="Title" class="form-control" required />
-                    <span asp-validation-for="Title" class="text-danger"></span>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="Title" data-valmsg-replace="true"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label">Mô tả</label>
@@ -44,7 +47,7 @@
 
                 <div id="allowedUsersSection" class="mb-3" style="display: none;">
                     <label class="form-label">Chọn người được phép truy cập:</label>
-                    <select asp-for="AllowedUserIds" class="form-select" multiple size="5">
+                    <select asp-for="AllowedUserIds" class="form-select" multiple size="5" id="allowedUsersSelect">
                         @foreach (var user in Model.AllUsers)
                         {
                             <option value="@user.UserId" selected="@(Model.AllowedUserIds?.Contains(user.UserId) ?? false)">
@@ -52,6 +55,7 @@
                             </option>
                         }
                     </select>
+                    <span class="text-danger" id="allowedUsersError"></span>
                 </div>
 
                 <div class="form-check form-switch mb-3">
@@ -90,6 +94,7 @@
                 {
                     <div class="card mb-3 question-item">
                         <div class="card-body">
+                            <input type="hidden" name="Questions[@i].QuestionId" value="@Model.Questions[i].QuestionId" />
                             <div class="d-flex justify-content-end">
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
                                     <i class="fas fa-trash"></i>
@@ -97,15 +102,16 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Nội dung câu hỏi *</label>
-                                <input name="Questions[@i].QuestionText" class="form-control" value="@Model.Questions[i].QuestionText" required />
+                                <input name="Questions[@i].QuestionText" class="form-control question-text" value="@Model.Questions[i].QuestionText" required />
+                                <span class="text-danger question-text-error"></span>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Loại câu hỏi</label>
-                                <select name="Questions[@i].QuestionType" class="form-select"
+                                <select name="Questions[@i].QuestionType" class="form-select question-type"
                                         onchange="handleQuestionTypeChange(@i, this)">
                                     <option value="Text" selected="@(Model.Questions[i].QuestionType == "Text")">Tự luận</option>
                                     <option value="SingleChoice" selected="@(Model.Questions[i].QuestionType == "SingleChoice")">Trắc nghiệm</option>
-                                    <option value="Multiplechoice" selected="@(Model.Questions[i].QuestionType == "Multiplechoice")">Checkbox (nhiều lựa chọn)</option>
+                                    <option value="MultipleChoice" selected="@(Model.Questions[i].QuestionType == "MultipleChoice")">Checkbox (nhiều lựa chọn)</option>
                                 </select>
                             </div>
                             <div class="form-check mb-3">
@@ -116,17 +122,18 @@
                                 @for (int j = 0; j < Model.Questions[i].Options.Count; j++)
                                 {
                                     <div class="input-group mb-2 option-item">
-                                        <input name="Questions[@i].Options[@j].OptionText" class="form-control" value="@Model.Questions[i].Options[j].OptionText" />
+                                        <input type="hidden" name="Questions[@i].Options[@j].OptionId" value="@Model.Questions[i].Options[j].OptionId" />
+                                        <input type="text" name="Questions[@i].Options[@j].OptionText" class="form-control option-text" placeholder="Nhập tùy chọn..." value="@Model.Questions[i].Options[j].OptionText" />
                                         <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                 }
                             </div>
-                            <button id="add-option-btn-@i" type="button" class="btn btn-sm btn-outline-primary mt-2"
-                                    onclick="addOption(@i)" style="display:@(Model.Questions[i].QuestionType == "Text" ? "none" : "inline-block")">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-add-option" onclick="addOption(@i)" id="add-option-btn-@i" style="display:@(Model.Questions[i].QuestionType == "Text" ? "none" : "inline-block")">
                                 <i class="fas fa-plus"></i> Thêm lựa chọn
                             </button>
+                            <span class="text-danger options-error"></span>
                         </div>
                     </div>
                 }
@@ -140,30 +147,25 @@
         </div>
     </form>
 </div>
+
 @section Scripts {
+    <script src="~/js/surveyValidation.js"></script>
     <script>
         function updateQuestionIndexes() {
             const questionItems = document.querySelectorAll(".question-item");
             questionItems.forEach((qItem, i) => {
-                // Update names for question inputs
                 qItem.querySelectorAll("input, select, textarea").forEach(el => {
                     if (el.name.includes("Questions[")) {
                         el.name = el.name.replace(/Questions\[\d+\]/g, `Questions[${i}]`);
                     }
                 });
-
-                // Update IDs and addOption button
                 const optionsContainer = qItem.querySelector(".options-container");
                 optionsContainer.id = `options-${i}`;
-
                 const addBtn = qItem.querySelector(".btn-add-option");
                 addBtn.setAttribute("onclick", `addOption(${i})`);
                 addBtn.id = `add-option-btn-${i}`;
-
                 const select = qItem.querySelector("select[name*='QuestionType']");
                 select.setAttribute("onchange", `handleQuestionTypeChange(${i}, this)`);
-
-                // Update option names
                 updateOptionIndexes(i);
             });
         }
@@ -172,11 +174,11 @@
             const optionContainer = document.getElementById(`options-${qIndex}`);
             const optionItems = optionContainer.querySelectorAll(".option-item");
             optionItems.forEach((optItem, j) => {
-            const inputs = optItem.querySelectorAll("input");
-            if (inputs.length === 2) {
-                inputs[0].name = `Questions[${qIndex}].Options[${j}].OptionId`;  // hidden ID
-                inputs[1].name = `Questions[${qIndex}].Options[${j}].OptionText`; // nội dung
-            }
+                const inputs = optItem.querySelectorAll("input");
+                if (inputs.length === 2) {
+                    inputs[0].name = `Questions[${qIndex}].Options[${j}].OptionId`;
+                    inputs[1].name = `Questions[${qIndex}].Options[${j}].OptionText`;
+                }
             });
         }
 
@@ -192,14 +194,15 @@
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
-                        <input type="hidden" name="Questions[${questionCount}].QuestionId" value="0" />
+                    <input type="hidden" name="Questions[${questionCount}].QuestionId" value="0" />
                     <div class="mb-3">
                         <label class="form-label">Nội dung câu hỏi *</label>
-                        <input name="Questions[${questionCount}].QuestionText" class="form-control" required />
+                        <input name="Questions[${questionCount}].QuestionText" class="form-control question-text" required />
+                        <span class="text-danger question-text-error"></span>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Loại câu hỏi</label>
-                        <select name="Questions[${questionCount}].QuestionType" class="form-select"
+                        <select name="Questions[${questionCount}].QuestionType" class="form-select question-type"
                                 onchange="handleQuestionTypeChange(${questionCount}, this)">
                             <option value="Text">Tự luận</option>
                             <option value="SingleChoice">Trắc nghiệm</option>
@@ -210,38 +213,67 @@
                         <input type="checkbox" name="Questions[${questionCount}].IsRequired" class="form-check-input" />
                         <label class="form-check-label">Câu hỏi bắt buộc</label>
                     </div>
-                    <div id="options-${questionCount}" class="options-container" style="display: none;">
-                    </div>
+                    <div id="options-${questionCount}" class="options-container" style="display: none;"></div>
                     <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-add-option"
                             onclick="addOption(${questionCount})" id="add-option-btn-${questionCount}" style="display: none;">
                         <i class="fas fa-plus"></i> Thêm lựa chọn
                     </button>
+                    <span class="text-danger options-error"></span>
                 </div>
             </div>`;
 
             container.insertAdjacentHTML('beforeend', html);
             updateQuestionIndexes();
+
+            const newQuestion = container.lastElementChild;
+            const questionText = newQuestion.querySelector('.question-text');
+            questionText.addEventListener('focus', function () {
+                const questionItems = document.querySelectorAll('.question-item');
+                const index = Array.from(questionItems).indexOf(newQuestion);
+                if (index > 0) {
+                    const prevQuestion = questionItems[index - 1];
+                    if (!validateQuestion(prevQuestion)) {
+                        validateQuestionText(prevQuestion);
+                        validateOptions(prevQuestion);
+                    }
+                }
+            });
+            questionText.addEventListener('blur', function () {
+                validateQuestionText(newQuestion);
+            });
+            questionText.addEventListener('input', function () {
+                validateQuestionText(newQuestion);
+            });
+
+            const optionInputs = newQuestion.querySelectorAll('.option-text');
+            optionInputs.forEach(input => {
+                input.addEventListener('input', function () {
+                    validateOptions(newQuestion);
+                });
+            });
         }
 
-                function addOption(qIndex) {
-                const optionContainer = document.getElementById(`options-${qIndex}`);
-                const count = optionContainer.querySelectorAll(".option-item").length;
+        function addOption(qIndex) {
+            const optionContainer = document.getElementById(`options-${qIndex}`);
+            const count = optionContainer.querySelectorAll(".option-item").length;
 
-                const html = `
-                <div class="input-group mb-2 option-item">
-                    <input type="hidden" name="Questions[${qIndex}].Options[${count}].OptionId" value="0" />
-                    <input type="text"
-                           name="Questions[${qIndex}].Options[${count}].OptionText"
-                           class="form-control"
-                           placeholder="Nhập tùy chọn..." />
-                    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>`;
+            const html = `
+            <div class="input-group mb-2 option-item">
+                <input type="hidden" name="Questions[${qIndex}].Options[${count}].OptionId" value="0" />
+                <input type="text" name="Questions[${qIndex}].Options[${count}].OptionText" class="form-control option-text" placeholder="Nhập tùy chọn..." />
+                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
+            optionContainer.insertAdjacentHTML('beforeend', html);
+            updateOptionIndexes(qIndex);
 
-                optionContainer.insertAdjacentHTML('beforeend', html);
-                updateOptionIndexes(qIndex);
-            }
+            const newOption = optionContainer.lastElementChild.querySelector('.option-text');
+            newOption.addEventListener('input', function () {
+                const questionItem = this.closest('.question-item');
+                validateOptions(questionItem);
+            });
+        }
 
         function removeQuestion(btn) {
             const questionItem = btn.closest('.question-item');
@@ -253,7 +285,6 @@
             const optItem = btn.closest('.option-item');
             const container = optItem.parentElement;
             optItem.remove();
-
             const qIndex = parseInt(container.id.split("-")[1]);
             updateOptionIndexes(qIndex);
         }
@@ -269,23 +300,30 @@
             } else {
                 optionsContainer.style.display = "block";
                 if (addBtn) addBtn.style.display = "inline-block";
-
-                // Nếu chưa có lựa chọn nào thì thêm 1 cái trống
                 if (optionsContainer.children.length === 0) {
                     addOption(qIndex);
                 }
             }
         }
 
-        // Xử lý toggle danh sách người dùng khi chọn công khai/riêng tư
         const isPublicCheckbox = document.getElementById('isPublicCheckbox');
         const allowedUsersSection = document.getElementById('allowedUsersSection');
 
         function toggleAllowedUsers() {
             allowedUsersSection.style.display = isPublicCheckbox.checked ? "none" : "block";
+            validateAllowedUsers();
         }
 
         isPublicCheckbox.addEventListener('change', toggleAllowedUsers);
         toggleAllowedUsers();
     </script>
+    <style>
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .text-danger {
+            font-size: 0.875em;
+        }
+    </style>
 }
