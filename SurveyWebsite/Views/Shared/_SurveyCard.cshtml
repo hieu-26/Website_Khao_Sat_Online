@@ -1,0 +1,30 @@
+﻿@model SurveyWebsite.Models.Survey
+@{
+    var participationCount = Model.Participations?.Count ?? 0;
+}
+
+<div class="col">
+    <div class="card h-100 shadow-sm border-0 rounded-4">
+        <div class="card-body">
+            <h5 class="card-title">@Model.Title</h5>
+            <p class="card-text text-muted">@Model.Description</p>
+            <small class="text-muted">
+                Tạo bởi: @Model.CreatorUser?.FullName (@Model.CreatedDate.ToString("dd/MM/yyyy"))
+            </small>
+        </div>
+        <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+            <span class="badge bg-secondary">@(participationCount + " người tham gia")</span>
+            <div>
+                @if (ViewBag.ShowEditDelete == true)
+                {
+                        <a asp-action="Edit" asp-route-id="@Model.SurveyId" 
+                           class="btn btn-outline-primary btn-sm me-1">Chỉnh sửa</a>
+                        <a asp-action="Delete" asp-route-id="@Model.SurveyId" 
+                           class="btn btn-outline-danger btn-sm me-1">Xóa</a>
+                }
+                <a asp-controller="Survey" asp-action="ViewSurvey" asp-route-id="@Model.SurveyId" 
+                   class="btn btn-outline-info btn-sm">Chi tiết</a>
+            </div>
+        </div>
+    </div>
+</div>

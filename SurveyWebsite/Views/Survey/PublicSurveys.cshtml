@@ -1,35 +1,52 @@
 ﻿@model List<SurveyWebsite.Models.Survey>
-
 @{
     ViewData["Title"] = "Khảo sát công khai & chia sẻ";
 }
 
 <h2 class="mb-4 text-center">Khảo sát được chia sẻ hoặc công khai</h2>
 
+<!-- Thêm bộ lọc giống trang Search -->
+<form asp-action="PublicSurveys" method="get" class="row mb-4">
+    <div class="col-md-4 offset-md-8">
+        <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+            <option value="date_desc" selected="@(ViewBag.SortOrder == "date_desc")">Mới nhất</option>
+            <option value="date_asc" selected="@(ViewBag.SortOrder == "date_asc")">Cũ nhất</option>
+            <option value="participants_desc" selected="@(ViewBag.SortOrder == "participants_desc")">Nhiều người tham gia</option>
+            <option value="participants_asc" selected="@(ViewBag.SortOrder == "participants_asc")">Ít người tham gia</option>
+        </select>
+    </div>
+</form>
+
 @if (!Model.Any())
 {
-        <div class="alert alert-info text-center">
-            Không có khảo sát nào được chia sẻ hoặc công khai dành cho bạn.
-        </div>
+    <div class="alert alert-info text-center">
+        Không có khảo sát nào được chia sẻ hoặc công khai dành cho bạn.
+    </div>
 }
 else
 {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         @foreach (var survey in Model)
         {
-                    <div class="col">
-                        <div class="card h-100 shadow-sm border-0 rounded-4">
-                            <div class="card-body">
-                                <h5 class="card-title">@survey.Title</h5>
-                                <p class="card-text text-muted">@survey.Description</p>
-                                <small class="text-muted">Tạo bởi: @survey.CreatorUser.FullName (@survey.CreatedDate.ToString("dd/MM/yyyy"))</small>
-                            </div>
-                            <div class="card-footer bg-white border-0 d-flex justify-content-end">
-                                <a asp-controller="Survey" asp-action="ViewSurvey" asp-route-id="@survey.SurveyId" class="btn btn-outline-primary">Xem chi tiết</a>
-                            </div>
-                        </div>
-                    </div>
+            @await Html.PartialAsync("_SurveyCard", survey)
         }
-        </div>
+    </div>
+
+    <!-- Thêm phân trang nếu cần -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="PublicSurveys"
+                           asp-route-sortOrder="@ViewBag.SortOrder"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
 }
-    

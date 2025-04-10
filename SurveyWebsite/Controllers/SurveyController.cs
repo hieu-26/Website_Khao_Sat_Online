@@ -233,35 +233,11 @@ namespace SurveyWebsite.Controllers
             return RedirectToAction("MySurveys");
         }
 
-        public async Task<IActionResult> MySurveys()
-        {
-            var userId = GetCurrentUserId();
-            var surveys = await _context.Surveys
-                .Where(s => s.CreatorUserId == userId)
-                .ToListAsync();
-
-            return View(surveys);
-        }
-
-        //KẾT QUẢ PHÂN TÍCH
-        public IActionResult Results(int id)
-        {
-            var survey = _context.Surveys
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.Options)
-                .Include(s => s.Questions)
-                    .ThenInclude(q => q.Answers)
-                .FirstOrDefault(s => s.SurveyId == id);
-
-            if (survey == null)
-                return NotFound();
-
-            return View(survey);
-        }
+        
 
 
 
-        //XOÁ
+//XOÁ
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -320,9 +296,26 @@ namespace SurveyWebsite.Controllers
             return RedirectToAction("MySurveys");
         }
 
+//KẾT QUẢ PHÂN TÍCH
+        public IActionResult Results(int id)
+        {
+            var survey = _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Answers)
+                .FirstOrDefault(s => s.SurveyId == id);
+
+            if (survey == null)
+                return NotFound();
+
+            return View(survey);
+        }
 
 
-        //THAM GIA 
+
+
+//THAM GIA 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitSurvey(int surveyId, IFormCollection form)
@@ -390,9 +383,9 @@ namespace SurveyWebsite.Controllers
             return View();
         }
 
-        //PublicSurveys
-        [Authorize] // Yêu cầu người dùng đăng nhập
-        public async Task<IActionResult> PublicSurveys()
+//KHẢO SÁT CHIA SẺ
+        [Authorize]
+        public async Task<IActionResult> PublicSurveys(string sortOrder, int page = 1)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int currentUserId))
@@ -400,15 +393,73 @@ namespace SurveyWebsite.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var publicOrSharedSurveys = await _context.Surveys
+            var query = _context.Surveys
                 .Include(s => s.CreatorUser)
-                .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(u => u.UserId == currentUserId))
+                .Include(s => s.Participations)
+                .Where(s => s.IsPublic || s.SurveyAllowedUsers.Any(u => u.UserId == currentUserId));
+
+            // Xử lý sort
+            ViewBag.SortOrder = sortOrder;
+            query = sortOrder switch
+            {
+                "date_asc" => query.OrderBy(s => s.CreatedDate),
+                "participants_desc" => query.OrderByDescending(s => s.Participations.Count),
+                "participants_asc" => query.OrderBy(s => s.Participations.Count),
+                _ => query.OrderByDescending(s => s.CreatedDate), // Mặc định: mới nhất
+            };
+
+            // Xử lý phân trang
+            int pageSize = 9;
+            int totalCount = await query.CountAsync();
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            ViewBag.Page = page;
+
+            var surveys = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return View(publicOrSharedSurveys);
+            return View(surveys);
         }
 
-//XEM KHẢO SÁT
+
+//KHẢO SÁT CỦA TÔI
+        [Authorize]
+        public async Task<IActionResult> MySurveys(string sortOrder, int page = 1)
+        {
+            var userId = GetCurrentUserId();
+
+            var query = _context.Surveys
+                .Include(s => s.CreatorUser)
+                .Include(s => s.Participations) // Thêm này để đếm số lượng participation
+                .Where(s => s.CreatorUserId == userId);
+
+            // Xử lý sắp xếp
+            ViewBag.SortOrder = sortOrder;
+            query = sortOrder switch
+            {
+                "date_asc" => query.OrderBy(s => s.CreatedDate),
+                "participants_desc" => query.OrderByDescending(s => s.Participations.Count),
+                "participants_asc" => query.OrderBy(s => s.Participations.Count),
+                _ => query.OrderByDescending(s => s.CreatedDate), // Mặc định: mới nhất
+            };
+
+            // Xử lý phân trang
+            int pageSize = 9;
+            int totalCount = await query.CountAsync();
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            ViewBag.Page = page;
+
+            var surveys = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.ShowEditDelete = true;
+            return View(surveys);
+        }
+
+        //XEM KHẢO SÁT
         [HttpGet]
         public async Task<IActionResult> ViewSurvey(int id)
         {
