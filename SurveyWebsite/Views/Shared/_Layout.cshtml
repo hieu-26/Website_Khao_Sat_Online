@@ -15,86 +15,63 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <!-- Thay logo "Khảo sát Online" bằng icon Survey -->
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="fas fa-poll"></i> Hệ thống khảo sát
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-flex justify-content-between align-items-center w-100">
-                    <ul class="navbar-nav">
-                        <!-- Thêm icon thông báo và thanh menu -->
-                        <!-- Thanh menu -->
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#"><i class="fas fa-bars"></i></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#"><i class="fas fa-bell"></i>   </a>
-                        </li>
 
-                    </ul>
+                <!-- Logo bên trái -->
+                <div class="flex-shrink-0">
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fas fa-poll"></i>
+                        <span class="ms-2 d-none d-sm-inline">Hệ thống khảo sát</span>
+                    </a>
+                </div>
+                
+             
+                   
 
-                    <!-- Thanh tìm kiếm-->
-                    <div class="search-container mx-3 flex-grow-1">
-                        @* <div class="search-box"> *@
-                        <form asp-controller="Survey" asp-action="Search" method="get" class="search-container mx-3 flex-grow-1">
-                            <div class="search-box">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text"
-                                       name="keyword"
-                                       class="search-input"
-                                       placeholder="Tìm kiếm biểu mẫu..."
-                                       aria-label="Search" />
-                                <i class="fas fa-times clear-search" style="display: none;"></i>
-                            </div>
-                        </form>
+                <!-- Thanh tìm kiếm-->
+                <div class="search-container mx-3 flex-grow-1">
+                    @* <div class="search-box"> *@
+                    <form asp-controller="Survey" asp-action="Search" method="get" class="search-container mx-3 flex-grow-1">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text"
+                                    name="keyword"
+                                    class="search-input"
+                                    placeholder="Tìm kiếm biểu mẫu..."
+                                    aria-label="Search" />
+                            <i class="fas fa-times clear-search" style="display: none;"></i>
+                        </div>
+                    </form>
 
 
-                        @* </div> *@
-                    </div>
+                    @* </div> *@
+                </div>
 
-                    <div class="user-menu d-flex align-items-center">
-                        @* @if (Context.Session.GetInt32("UserId") != null)  Đoạn này không chạy được*@
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            @* <div class="user-profile"> *@
-                            @*     <!-- Hiển thị ảnh hoặc tên người dùng --> *@
-                            @*     <img src="~/images/default-avatar.png" alt="Avatar" class="user-avatar"> *@
-                            @*     <span class="user-name">@Context.Session.GetString("Username")</span> *@
-                            @*     <i class="fas fa-caret-down"></i> *@
+                <div class="user-menu d-flex align-items-center">
+                    @* @if (Context.Session.GetInt32("UserId") != null)  Đoạn này không chạy được*@
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="dropdown user-profile">
+                            <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="~/images/default-avatar.png" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
+                                <span class="user-name">@Context.Session.GetString("FullName")</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Trang cá nhân</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Cài đặt</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                            </ul>
+                        </div>
 
-                            @*     <div class="dropdown-menu"> *@
-                            @*         <a href="#"><i class="fas fa-user"></i> Trang cá nhân</a> *@
-                            @*         <a href="#"><i class="fas fa-cog"></i> Cài đặt</a> *@
-                            @*         <div class="divider"></div> *@
-                            @*         <a asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a> *@
-                            @*     </div> *@
-                            @* </div> *@
-
-                            <div class="dropdown user-profile">
-                                <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userDropdown"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <img src="~/images/default-avatar.png" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
-                                    <span class="user-name">@Context.Session.GetString("FullName")</span>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Trang cá nhân</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Cài đặt</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                                </ul>
-                            </div>
-
-                        }
-                        else
-                        {
-                            <div class="auth-buttons">
-                                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">Đăng nhập</a>
-                                <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Đăng ký</a>
-                            </div>
-                        }
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="auth-buttons">
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">Đăng nhập</a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Đăng ký</a>
+                        </div>
+                    }
                 </div>
             </div>
         </nav>
