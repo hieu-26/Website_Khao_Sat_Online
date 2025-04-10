@@ -1,4 +1,4 @@
-/* Base styles */
+﻿/* Base styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
@@ -110,4 +110,16 @@ Footer styles
 }
 
 
-/*Form css*/
+
+.chart-container {
+    position: relative;
+    height: 300px; /* Cố định chiều cao */
+    width: 100%;
+    max-width: 600px;
+}
+
+canvas.chart-canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+

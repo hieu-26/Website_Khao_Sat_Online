@@ -243,20 +243,25 @@ namespace SurveyWebsite.Controllers
             return View(surveys);
         }
 
-        public async Task<IActionResult> Results(int id)
+        //KẾT QUẢ PHÂN TÍCH
+        public IActionResult Results(int id)
         {
-            var userId = GetCurrentUserId();
-            var survey = await _context.Surveys
-                .Include(s => s.Questions).ThenInclude(q => q.Answers)
-                .Include(s => s.Participations)
-                .FirstOrDefaultAsync(s => s.SurveyId == id && s.CreatorUserId == userId);
+            var survey = _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Answers)
+                .FirstOrDefault(s => s.SurveyId == id);
 
-            if (survey == null) return NotFound();
+            if (survey == null)
+                return NotFound();
 
             return View(survey);
         }
 
-//XOÁ
+
+
+        //XOÁ
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();

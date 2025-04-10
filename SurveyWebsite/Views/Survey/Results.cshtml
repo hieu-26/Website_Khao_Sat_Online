@@ -3,123 +3,138 @@
     ViewData["Title"] = "Kết quả khảo sát";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+@using System.Text.Json
 
 <h2 class="text-center mb-4">@Model.Title - Kết quả khảo sát</h2>
 
-<div class="row">
-    <!-- DANH SÁCH CÂU HỎI -->
-    <div class="col-md-6 border-end">
-        <h4 class="text-primary">Danh sách câu hỏi</h4>
-        <div class="list-group">
-            @foreach (var q in Model.Questions)
-            {
-                <div class="list-group-item mb-2 shadow-sm rounded-3">
-                    <strong>@q.QuestionText</strong>
-                    @if (q.Options != null && q.Options.Any())
-                    {
-                        <span class="badge bg-info text-dark ms-2">Trắc nghiệm</span>
-                        <ul class="mb-1 mt-2">
-                            @foreach (var opt in q.Options)
-                            {
-                                <li>@opt.OptionText</li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary ms-2">Tự luận</span>
-                    }
-                </div>
-            }
-        </div>
-    </div>
+<div class="container">
+    @foreach (var q in Model.Questions)
+    {
+        var totalAnswers = q.Answers.Count;
+        <div class="mb-5 p-4 border rounded shadow-sm">
+            <!-- Tiêu đề câu hỏi -->
+            <h5 class="fw-bold">@q.QuestionText</h5>
 
-    <!-- PHÂN TÍCH TRẢ LỜI -->
-    <div class="col-md-6">
-        <h4 class="text-success">Phân tích câu trả lời</h4>
-        @foreach (var q in Model.Questions)
-        {
-            <div class="mb-4 p-3 border rounded shadow-sm">
-                <h6 class="fw-bold">@q.QuestionText</h6>
-
-                @if (q.Options != null && q.Options.Any())
+            <!-- Loại câu hỏi và số lượt trả lời -->
+            <div class="mb-2">
+                @switch (q.QuestionType)
                 {
-                    // Trắc nghiệm: Hiển thị biểu đồ
-                    var answerGroups = q.Answers
-                    .Where(a => a.Option != null)
-                    .GroupBy(a => a.Option.OptionText)
-                    .Select(g => new { OptionText = g.Key, Count = g.Count() })
-                    .ToList();
+                    case "SingleChoice":
+                        <span class="badge bg-info text-dark">Trắc nghiệm</span>
+                        break;
+                    case "MultipleChoice":
+                        <span class="badge bg-warning text-dark">Hộp kiểm</span>
+                        break;
+                    case "Text":
+                        <span class="badge bg-secondary">Tự luận</span>
+                        break;
+                }
+                <span class="ms-2 text-muted">Số lượt trả lời: <strong>@totalAnswers</strong></span>
+            </div>
 
-                    @if (answerGroups.Any())
+            <!-- Phân tích trả lời -->
+            @if (q.QuestionType == "Text")
+            {
+                var textAnswers = q.Answers
+                .Where(a => !string.IsNullOrEmpty(a.AnswerText))
+                .Select(a => a.AnswerText)
+                .ToList();
+
+                if (textAnswers.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @for (int i = 0; i < Math.Min(3, textAnswers.Count); i++)
+                        {
+                            <li class="list-group-item">📝 @textAnswers[i]</li>
+                        }
+                    </ul>
+
+                    @if (textAnswers.Count > 3)
                     {
-                        <canvas id="chart-@q.QuestionId" height="200"></canvas>
-
-                        <script>
-                            const ctx@q.QuestionId = document.getElementById('chart-@q.QuestionId').getContext('2d');
-                            new Chart(ctx@q.QuestionId, {
-                                type: 'bar',
-                                data: {
-                                    labels: [@string.Join(",", answerGroups.Select(g => $"\"{g.OptionText}\""))],
-                                    datasets: [{
-                                        label: 'Số lượt chọn',
-                                        data: [@string.Join(",", answerGroups.Select(g => g.Count))],
-                                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                                        borderColor: 'rgba(75, 192, 192, 1)',
-                                        borderWidth: 1
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    plugins: {
-                                        legend: {
-                                            display: false
-                                        }
-                                    },
-                                    scales: {
-                                        y: {
-                                            beginAtZero: true,
-                                            ticks: {
-                                                precision: 0
-                                            }
-                                        }
-                                    }
+                        var collapseId = "collapse-" + q.QuestionId;
+                        <a class="btn btn-sm btn-link mt-2" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                            Xem thêm (@(textAnswers.Count - 3))
+                        </a>
+                        <div class="collapse mt-2" id="@collapseId">
+                            <ul class="list-group list-group-flush">
+                                @for (int i = 3; i < textAnswers.Count; i++)
+                                {
+                                    <li class="list-group-item">📝 @textAnswers[i]</li>
                                 }
-                            });
-                        </script>
-                    }
-                    else
-                    {
-                        <p class="text-muted">Chưa có câu trả lời nào.</p>
+                            </ul>
+                        </div>
                     }
                 }
                 else
                 {
-                    // Tự luận: Hiển thị danh sách câu trả lời text
-                    var textAnswers = q.Answers
-                    .Where(a => !string.IsNullOrEmpty(a.AnswerText))
-                    .Select(a => a.AnswerText)
-                    .ToList();
-
-                    @if (textAnswers.Any())
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var ans in textAnswers)
-                            {
-                                <li class="list-group-item">📝 @ans</li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p class="text-muted">Chưa có câu trả lời nào.</p>
-                    }
+                    <p class="text-muted">Chưa có câu trả lời nào.</p>
                 }
-            </div>
-        }
-    </div>
+            }
+            else
+            {
+                var chartId = "chart-" + q.QuestionId;
+                var chartType = q.QuestionType == "SingleChoice" ? "pie" : "bar";
+
+                var optionLabels = q.Options.Select(o => o.OptionText).ToList();
+                var optionCounts = q.Options
+                .Select(o => q.Answers.Count(a => a.OptionId == o.OptionId))
+                .ToList();
+                <div class="chart-container" style="max-width: 600px; margin: auto; height: 400px;">
+                    <canvas id="@chartId" class="chart-canvas"></canvas>
+                </div>
+
+                <script>
+                    (function () {
+                        const ctx = document.getElementById('@chartId').getContext('2d');
+                        const chartType = '@chartType';
+
+                        new Chart(ctx, {
+                            type: chartType,
+                            data: {
+                                labels: @Html.Raw(JsonSerializer.Serialize(optionLabels)),
+                                datasets: [{
+                                    label: 'Số lượt chọn',
+                                    data: @Html.Raw(JsonSerializer.Serialize(optionCounts)),
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.6)',
+                                        'rgba(54, 162, 235, 0.6)',
+                                        'rgba(255, 206, 86, 0.6)',
+                                        'rgba(75, 192, 192, 0.6)',
+                                        'rgba(153, 102, 255, 0.6)',
+                                        'rgba(255, 159, 64, 0.6)',
+                                        'rgba(201, 203, 207, 0.6)',
+                                        'rgba(100, 200, 100, 0.6)'
+                                    ],
+                                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                },
+                                ...(chartType === 'bar' ? {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { precision: 0 }
+                                        }
+                                    }
+                                } : {})
+                            }
+                        });
+                    })();
+                </script>
+            }
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 }

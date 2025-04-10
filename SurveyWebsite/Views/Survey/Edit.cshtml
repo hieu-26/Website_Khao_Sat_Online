@@ -105,7 +105,7 @@
                                         onchange="handleQuestionTypeChange(@i, this)">
                                     <option value="Text" selected="@(Model.Questions[i].QuestionType == "Text")">Tự luận</option>
                                     <option value="SingleChoice" selected="@(Model.Questions[i].QuestionType == "SingleChoice")">Trắc nghiệm</option>
-                                    <option value="Checkbox" selected="@(Model.Questions[i].QuestionType == "Checkbox")">Checkbox (nhiều lựa chọn)</option>
+                                    <option value="Checkbox" selected="@(Model.Questions[i].QuestionType == "Multiplechoice")">Checkbox (nhiều lựa chọn)</option>
                                 </select>
                             </div>
                             <div class="form-check mb-3">
@@ -203,7 +203,7 @@
                                 onchange="handleQuestionTypeChange(${questionCount}, this)">
                             <option value="Text">Tự luận</option>
                             <option value="SingleChoice">Trắc nghiệm</option>
-                            <option value="Checkbox">Checkbox (nhiều lựa chọn)</option>
+                            <option value="MultipleChoice">Checkbox (nhiều lựa chọn)</option>
                         </select>
                     </div>
                     <div class="form-check mb-3">
