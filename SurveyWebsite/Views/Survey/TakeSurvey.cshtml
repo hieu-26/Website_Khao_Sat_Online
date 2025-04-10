@@ -43,6 +43,14 @@
                 background-color: #e2e6ea;
                 color: #003f80;
             }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .text-danger {
+            font-size: 0.875em;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -54,7 +62,7 @@
             <div class="card-body">
                 <p><strong>Mô tả:</strong> @Model.Description</p>
 
-                <form asp-action="SubmitSurvey" asp-controller="Survey" method="post">
+                <form asp-action="SubmitSurvey" asp-controller="Survey" method="post" id="surveyForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="surveyId" value="@Model.SurveyId" />
 
@@ -69,32 +77,35 @@
                                 @for (int i = start; i < end; i++)
                                 {
                                     var question = questions[i];
-                                    <div class="mb-4">
-                                        <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText</h5>
+                                    <div class="mb-4 question-item" data-required="@question.IsRequired" data-question-id="@question.QuestionId">
+                                        <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText @(question.IsRequired ? "<span class='text-danger'>*</span>" : "")</h5>
 
                                         @if (question.QuestionType == "SingleChoice" || question.QuestionType == "Radio")
                                         {
                                             foreach (var option in question.Options)
                                             {
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="question_@question.QuestionId" value="@option.OptionId" />
+                                                    <input class="form-check-input question-input" type="radio" name="question_@question.QuestionId" value="@option.OptionId" @(question.IsRequired ? "data-required" : "") />
                                                     <label class="form-check-label">@option.OptionText</label>
                                                 </div>
                                             }
+                                            <span class="text-danger answer-error"></span>
                                         }
                                         else if (question.QuestionType == "MultipleChoice")
                                         {
                                             foreach (var option in question.Options)
                                             {
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="question_@question.QuestionId" value="@option.OptionId" />
+                                                    <input class="form-check-input question-input" type="checkbox" name="question_@question.QuestionId" value="@option.OptionId" @(question.IsRequired ? "data-required" : "") />
                                                     <label class="form-check-label">@option.OptionText</label>
                                                 </div>
                                             }
+                                            <span class="text-danger answer-error"></span>
                                         }
                                         else if (question.QuestionType == "Tự luận" || question.QuestionType == "Text")
                                         {
-                                            <textarea class="form-control" name="question_@question.QuestionId" rows="3"></textarea>
+                                            <textarea class="form-control question-input" name="question_@question.QuestionId" rows="3" @(question.IsRequired ? "required" : "")></textarea>
+                                            <span class="text-danger answer-error"></span>
                                         }
                                     </div>
                                 }
@@ -106,7 +117,7 @@
                                     }
                                     @if (page < totalPages - 1)
                                     {
-                                        <button type="button" class="btn btn-custom-primary" onclick="showSection(@(page + 1))">Tiếp tục</button>
+                                        <button type="button" class="btn btn-custom-primary" onclick="nextSection(@(page), @(page + 1))">Tiếp tục</button>
                                     }
                                     else
                                     {
@@ -122,32 +133,35 @@
                             @for (int i = 0; i < totalQuestions; i++)
                             {
                                 var question = questions[i];
-                                <div class="mb-4">
-                                    <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText</h5>
+                                <div class="mb-4 question-item" data-required="@question.IsRequired" data-question-id="@question.QuestionId">
+                                    <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText @(question.IsRequired ? "<span class='text-danger'>*</span>" : "")</h5>
 
                                     @if (question.QuestionType == "SingleChoice" || question.QuestionType == "Radio")
                                     {
                                         foreach (var option in question.Options)
                                         {
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="question_@question.QuestionId" value="@option.OptionId" />
+                                                <input class="form-check-input question-input" type="radio" name="question_@question.QuestionId" value="@option.OptionId" @(question.IsRequired ? "data-required" : "") />
                                                 <label class="form-check-label">@option.OptionText</label>
                                             </div>
                                         }
+                                        <span class="text-danger answer-error"></span>
                                     }
                                     else if (question.QuestionType == "MultipleChoice")
                                     {
                                         foreach (var option in question.Options)
                                         {
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="question_@question.QuestionId" value="@option.OptionId" />
+                                                <input class="form-check-input question-input" type="checkbox" name="question_@question.QuestionId" value="@option.OptionId" @(question.IsRequired ? "data-required" : "") />
                                                 <label class="form-check-label">@option.OptionText</label>
                                             </div>
                                         }
+                                        <span class="text-danger answer-error"></span>
                                     }
                                     else if (question.QuestionType == "Tự luận" || question.QuestionType == "Text")
                                     {
-                                        <textarea class="form-control" name="question_@question.QuestionId" rows="3"></textarea>
+                                        <textarea class="form-control question-input" name="question_@question.QuestionId" rows="3" @(question.IsRequired ? "required" : "")></textarea>
+                                        <span class="text-danger answer-error"></span>
                                     }
                                 </div>
                             }
@@ -173,6 +187,97 @@
                 window.scrollTo(0, 0);
             }
         }
+
+        function validateQuestion(questionItem) {
+            const isRequired = questionItem.getAttribute('data-required') === 'True';
+            if (!isRequired) return true;
+
+            const inputs = questionItem.querySelectorAll('.question-input');
+            const errorSpan = questionItem.querySelector('.answer-error');
+            let isValid = false;
+
+            if (inputs.length > 0) {
+                if (inputs[0].type === 'radio' || inputs[0].type === 'checkbox') {
+                    isValid = Array.from(inputs).some(input => input.checked);
+                } else if (inputs[0].tagName === 'TEXTAREA') {
+                    isValid = inputs[0].value.trim() !== '';
+                }
+            }
+
+            if (!isValid) {
+                errorSpan.textContent = 'Vui lòng trả lời câu hỏi này.';
+                inputs.forEach(input => input.classList.add('is-invalid'));
+            } else {
+                errorSpan.textContent = '';
+                inputs.forEach(input => input.classList.remove('is-invalid'));
+            }
+            return isValid;
+        }
+
+        function validateSection(sectionIndex) {
+            const section = document.getElementById('section-' + sectionIndex);
+            const questionItems = section.querySelectorAll('.question-item');
+            let isValid = true;
+
+            questionItems.forEach(item => {
+                if (!validateQuestion(item)) {
+                    isValid = false;
+                }
+            });
+            return isValid;
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const questionItems = document.querySelectorAll('.question-item');
+
+            questionItems.forEach(item => {
+                if (!validateQuestion(item)) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                alert('Vui lòng trả lời tất cả các câu hỏi bắt buộc trước khi gửi.');
+                const firstInvalid = document.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    const section = firstInvalid.closest('.question-section');
+                    if (section && !section.classList.contains('active')) {
+                        const sectionIndex = parseInt(section.id.split('-')[1]);
+                        showSection(sectionIndex);
+                    }
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalid.focus();
+                }
+            }
+            return isValid;
+        }
+
+        function nextSection(currentIndex, nextIndex) {
+            if (validateSection(currentIndex)) {
+                showSection(nextIndex);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('surveyForm');
+            form.addEventListener('submit', function (event) {
+                if (!validateForm()) {
+                    event.preventDefault();
+                }
+            });
+
+            document.querySelectorAll('.question-input').forEach(input => {
+                input.addEventListener('change', function () {
+                    const questionItem = this.closest('.question-item');
+                    validateQuestion(questionItem);
+                });
+                input.addEventListener('input', function () {
+                    const questionItem = this.closest('.question-item');
+                    validateQuestion(questionItem);
+                });
+            });
+        });
     </script>
 </body>
 </html>

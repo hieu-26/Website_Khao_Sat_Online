@@ -96,9 +96,10 @@ function validateAllQuestions() {
 // Hàm kiểm tra toàn bộ form
 function validateForm() {
     let isValid = true;
-    isValid = validateTitle() && isValid;
-    isValid = validateAllowedUsers() && isValid;
-    isValid = validateAllQuestions() && isValid;
+
+    if (!validateTitle()) isValid = false;
+    if (!validateAllowedUsers()) isValid = false;
+    if (!validateAllQuestions()) isValid = false;
 
     if (!isValid) {
         alert("Có lỗi trong form. Vui lòng kiểm tra và sửa các trường có lỗi.");
@@ -111,6 +112,7 @@ function validateForm() {
     }
     return true; // Cho phép submit
 }
+
 
 // Thêm sự kiện cho các trường
 document.addEventListener('DOMContentLoaded', function () {
