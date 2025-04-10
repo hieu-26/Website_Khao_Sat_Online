@@ -72,7 +72,7 @@
                                     <div class="mb-4">
                                         <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText</h5>
 
-                                        @if (question.QuestionType == "Trắc nghiệm" || question.QuestionType == "Radio")
+                                        @if (question.QuestionType == "MultipleChoice" || question.QuestionType == "Radio")
                                         {
                                             foreach (var option in question.Options)
                                             {
@@ -125,7 +125,7 @@
                                 <div class="mb-4">
                                     <h5 class="mb-2">Câu hỏi @(i + 1): @question.QuestionText</h5>
 
-                                    @if (question.QuestionType == "Trắc nghiệm" || question.QuestionType == "Radio")
+                                    @if (question.QuestionType == "MultipleChoice" || question.QuestionType == "Radio")
                                     {
                                         foreach (var option in question.Options)
                                         {

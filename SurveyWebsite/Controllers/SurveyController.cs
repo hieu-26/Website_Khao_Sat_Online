@@ -504,6 +504,12 @@ namespace SurveyWebsite.Controllers
             if (survey == null)
                 return NotFound();
 
+            foreach (var q in survey.Questions)
+            {
+                Console.WriteLine($"Câu hỏi: {q.QuestionText}, Số lựa chọn: {q.Options?.Count}");
+            }
+
+
             // Kiểm tra nếu người dùng đã tham gia khảo sát trước đó
             if (currentUser != null)
             {
