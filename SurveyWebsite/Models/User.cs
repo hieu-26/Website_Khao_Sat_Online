@@ -13,6 +13,10 @@ public partial class User
 
     public string? FullName { get; set; }
 
+    public string? SDT { get; set; }
+    public DateTime? LockoutUntil { get; set; } // Cho phép NULL
+    public int FailedLoginAttempts { get; set; } = 0;
+
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<Participation> Participations { get; set; } = new List<Participation>();
@@ -20,4 +24,6 @@ public partial class User
     public virtual ICollection<SurveyAllowedUser> SurveyAllowedUsers { get; set; } = new List<SurveyAllowedUser>();
 
     public virtual ICollection<Survey> Surveys { get; set; } = new List<Survey>();
+
+
 }

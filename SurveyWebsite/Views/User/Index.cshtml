@@ -1,0 +1,167 @@
+﻿@{
+    ViewData["Title"] = "Quản lý người dùng (AJAX)";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+    <h2 class="mb-4">Quản lý người dùng</h2>
+
+    <!-- Form thêm -->
+    <div class="card p-3 mb-4">
+        <h5>Thêm người dùng</h5>
+        <div class="row g-3">
+            <div class="col-md-3"><input id="Username" class="form-control" placeholder="Username" /></div>
+            <div class="col-md-3"><input id="Password" class="form-control" placeholder="Password" type="password" /></div>
+            <div class="col-md-3"><input id="FullName" class="form-control" placeholder="Họ tên" /></div>
+            <div class="col-md-3"><input id="SDT" class="form-control" placeholder="Số điện thoại" /></div>
+        </div>
+        <button class="btn btn-success mt-3" onclick="createUser()">Thêm mới</button>
+    </div>
+
+    <!-- Bảng danh sách -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Username</th>
+                <th>Họ tên</th>
+                <th>SĐT</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+    </table>
+</div>
+
+<!-- Modal sửa người dùng -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content p-3">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa thông tin</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="EditUserId" />
+                <input id="EditUsername" class="form-control mb-2" placeholder="Username" />
+                <input id="EditPassword" class="form-control mb-2" placeholder="Password" type="password" />
+                <input id="EditFullName" class="form-control mb-2" placeholder="Họ tên" />
+                <input id="EditSDT" class="form-control mb-2" placeholder="SĐT" />
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="updateUser()">Lưu</button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    function loadUsers() {
+        $.get('/User/GetUsers', function (users) {
+            let html = '';
+            users.forEach(u => {
+                html += `<tr>
+                    <td>${u.username}</td>
+                    <td>${u.fullName}</td>
+                    <td>${u.sdt}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm me-1" onclick="showEditModal(${u.userId})">Sửa</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.userId})">Xoá</button>
+                    </td>
+                </tr>`;
+            });
+            $('#userTableBody').html(html);
+        });
+    }
+
+        function createUser() {
+        const phoneNumber = $('#SDT').val();
+
+        // Kiểm tra số điện thoại có hợp lệ không
+        const phonePattern = /^0\d{9}$/;
+        if (!phonePattern.test(phoneNumber)) {
+            alert('Số điện thoại không hợp lệ! Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0.');
+            return;
+        }
+
+        const user = {
+            username: $('#Username').val(),
+            password: $('#Password').val(),
+            fullName: $('#FullName').val(),
+            sdt: phoneNumber
+        };
+
+        $.ajax({
+            url: '/User/Create',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(user),
+            success: function (res) {
+                alert(res.message);
+                if (res.success) {
+                    loadUsers();
+                    $('#Username, #Password, #FullName, #SDT').val('');
+                }
+            }
+        });
+    }
+
+    function showEditModal(id) {
+        $.get(`/User/GetUserById?id=${id}`, function (res) {
+            if (res.success) {
+                const u = res.data;
+                $('#EditUserId').val(u.userId);
+                $('#EditUsername').val(u.username);
+                $('#EditPassword').val(u.password);
+                $('#EditFullName').val(u.fullName);
+                $('#EditSDT').val(u.sdt);
+                new bootstrap.Modal(document.getElementById('editUserModal')).show();
+            } else {
+                alert(res.message);
+            }
+        });
+    }
+
+    function updateUser() {
+        const user = {
+            userId: $('#EditUserId').val(),
+            username: $('#EditUsername').val(),
+            password: $('#EditPassword').val(),
+            fullName: $('#EditFullName').val(),
+            sdt: $('#EditSDT').val()
+        };
+
+        $.ajax({
+            url: '/User/Edit',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(user),
+            success: function (res) {
+                alert(res.message);
+                if (res.success) {
+                    $('#editUserModal').modal('hide');
+                    loadUsers();
+                }
+            }
+        });
+    }
+
+    function deleteUser(id) {
+        if (confirm('Bạn có chắc muốn xoá người dùng này không?')) {
+            $.post('/User/Delete', { id }, function (res) {
+                alert(res.message);
+                if (res.success) {
+                    loadUsers();
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        loadUsers();
+    });
+</script>

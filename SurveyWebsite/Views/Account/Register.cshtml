@@ -1,8 +1,12 @@
-﻿    @* Views/Account/Register.cshtml *@
+﻿@* Views/Account/Register.cshtml *@
         @model User
 
 @section Styles {
     <link href="~/css/auth-style.css" rel="stylesheet" />
+}
+@if (ViewBag.Error != null)
+{
+    <div style="color: red; text-align: center;">@ViewBag.Error</div>
 }
 <div class="auth-wrapper">
     <form asp-action="Register" id="registerForm" class="auth-form">
@@ -35,132 +39,132 @@
         <a asp-action="Login" class="btn btn-link">Đã có tài khoản? Đăng nhập</a>
     </form>
 </div>
-    <script>
-               // Lắng nghe sự kiện blur để kiểm tra lỗi khi người dùng rời khỏi trường
-        document.getElementById("FullName").addEventListener("blur", function() {
-            validateFullName();
-        });
+<script>
+           // Lắng nghe sự kiện blur để kiểm tra lỗi khi người dùng rời khỏi trường
+    document.getElementById("FullName").addEventListener("blur", function() {
+        validateFullName();
+    });
 
-        document.getElementById("Username").addEventListener("blur", function() {
-            validateUsername();
-        });
+    document.getElementById("Username").addEventListener("blur", function() {
+        validateUsername();
+    });
 
-        document.getElementById("Password").addEventListener("blur", function() {
-            validatePassword();
-        });
+    document.getElementById("Password").addEventListener("blur", function() {
+        validatePassword();
+    });
 
-        document.getElementById("ConfirmPassword").addEventListener("blur", function() {
-            validateConfirmPassword();
-        });
+    document.getElementById("ConfirmPassword").addEventListener("blur", function() {
+        validateConfirmPassword();
+    });
 
-        // Lắng nghe sự kiện click để ẩn lỗi khi người dùng click vào trường nhập liệu
-        document.getElementById("FullName").addEventListener("click", function() {
-            document.getElementById("fullNameError").style.display = "none";
-            document.getElementById("fullNameGroup").classList.remove("has-error");
-        });
+    // Lắng nghe sự kiện click để ẩn lỗi khi người dùng click vào trường nhập liệu
+    document.getElementById("FullName").addEventListener("click", function() {
+        document.getElementById("fullNameError").style.display = "none";
+        document.getElementById("fullNameGroup").classList.remove("has-error");
+    });
 
-        document.getElementById("Username").addEventListener("click", function() {
-            document.getElementById("usernameError").style.display = "none";
-            document.getElementById("usernameGroup").classList.remove("has-error");
-        });
+    document.getElementById("Username").addEventListener("click", function() {
+        document.getElementById("usernameError").style.display = "none";
+        document.getElementById("usernameGroup").classList.remove("has-error");
+    });
 
-        document.getElementById("Password").addEventListener("click", function() {
-            document.getElementById("passwordError").style.display = "none";
-            document.getElementById("passwordGroup").classList.remove("has-error");
-        });
+    document.getElementById("Password").addEventListener("click", function() {
+        document.getElementById("passwordError").style.display = "none";
+        document.getElementById("passwordGroup").classList.remove("has-error");
+    });
 
-        document.getElementById("ConfirmPassword").addEventListener("click", function() {
-            document.getElementById("confirmPasswordError").style.display = "none";
-            document.getElementById("confirmPasswordGroup").classList.remove("has-error");
-        });
+    document.getElementById("ConfirmPassword").addEventListener("click", function() {
+        document.getElementById("confirmPasswordError").style.display = "none";
+        document.getElementById("confirmPasswordGroup").classList.remove("has-error");
+    });
 
-        // Hàm kiểm tra lỗi cho Full Name
-        function validateFullName() {
-            var fullName = document.getElementById("FullName").value;
-            var errorElement = document.getElementById("fullNameError");
-            var fullNameGroup = document.getElementById("fullNameGroup");
+    // Hàm kiểm tra lỗi cho Full Name
+    function validateFullName() {
+        var fullName = document.getElementById("FullName").value;
+        var errorElement = document.getElementById("fullNameError");
+        var fullNameGroup = document.getElementById("fullNameGroup");
 
-            if (fullName.trim() === "") {
-                errorElement.style.display = "block";
-                fullNameGroup.classList.add("has-error");
-                errorElement.textContent = "Họ và tên không được để trống.";
-                return false;
-            }
-
-            errorElement.style.display = "none";
-            fullNameGroup.classList.remove("has-error");
-            return true;
+        if (fullName.trim() === "") {
+            errorElement.style.display = "block";
+            fullNameGroup.classList.add("has-error");
+            errorElement.textContent = "Họ và tên không được để trống.";
+            return false;
         }
 
-        // Hàm kiểm tra lỗi cho Username
-        function validateUsername() {
-            var username = document.getElementById("Username").value;
-            var errorElement = document.getElementById("usernameError");
-            var usernameGroup = document.getElementById("usernameGroup");
+        errorElement.style.display = "none";
+        fullNameGroup.classList.remove("has-error");
+        return true;
+    }
 
-            if (username.trim() === "") {
-                errorElement.style.display = "block";
-                usernameGroup.classList.add("has-error");
-                errorElement.textContent = "Tên đăng nhập không được để trống.";
-                return false;
-            }
+    // Hàm kiểm tra lỗi cho Username
+    function validateUsername() {
+        var username = document.getElementById("Username").value;
+        var errorElement = document.getElementById("usernameError");
+        var usernameGroup = document.getElementById("usernameGroup");
 
-            errorElement.style.display = "none";
-            usernameGroup.classList.remove("has-error");
-            return true;
+        if (username.trim() === "") {
+            errorElement.style.display = "block";
+            usernameGroup.classList.add("has-error");
+            errorElement.textContent = "Tên đăng nhập không được để trống.";
+            return false;
         }
 
-        // Hàm kiểm tra lỗi cho Password
-        function validatePassword() {
-            var password = document.getElementById("Password").value;
-            var errorElement = document.getElementById("passwordError");
-            var passwordGroup = document.getElementById("passwordGroup");
+        errorElement.style.display = "none";
+        usernameGroup.classList.remove("has-error");
+        return true;
+    }
 
-            if (password.trim() === "") {
-                errorElement.style.display = "block";
-                passwordGroup.classList.add("has-error");
-                errorElement.textContent = "Mật khẩu không được để trống.";
-                return false;
-            }
+    // Hàm kiểm tra lỗi cho Password
+    function validatePassword() {
+        var password = document.getElementById("Password").value;
+        var errorElement = document.getElementById("passwordError");
+        var passwordGroup = document.getElementById("passwordGroup");
 
-            errorElement.style.display = "none";
-            passwordGroup.classList.remove("has-error");
-            return true;
+        if (password.trim() === "") {
+            errorElement.style.display = "block";
+            passwordGroup.classList.add("has-error");
+            errorElement.textContent = "Mật khẩu không được để trống.";
+            return false;
         }
 
-        // Hàm kiểm tra lỗi cho Confirm Password
-        function validateConfirmPassword() {
-            var confirmPassword = document.getElementById("ConfirmPassword").value;
-            var password = document.getElementById("Password").value;
-            var errorElement = document.getElementById("confirmPasswordError");
-            var confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
+        errorElement.style.display = "none";
+        passwordGroup.classList.remove("has-error");
+        return true;
+    }
 
-            if (confirmPassword.trim() === "") {
-                errorElement.style.display = "block";
-                confirmPasswordGroup.classList.add("has-error");
-                errorElement.textContent = "Nhập lại mật khẩu không được để trống.";
-                return false;
-            }
+    // Hàm kiểm tra lỗi cho Confirm Password
+    function validateConfirmPassword() {
+        var confirmPassword = document.getElementById("ConfirmPassword").value;
+        var password = document.getElementById("Password").value;
+        var errorElement = document.getElementById("confirmPasswordError");
+        var confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
 
-            if (confirmPassword !== password) {
-                errorElement.style.display = "block";
-                confirmPasswordGroup.classList.add("has-error");
-                errorElement.textContent = "Mật khẩu nhập lại không đúng.";
-                return false;
-            }
-
-            errorElement.style.display = "none";
-            confirmPasswordGroup.classList.remove("has-error");
-            return true;
+        if (confirmPassword.trim() === "") {
+            errorElement.style.display = "block";
+            confirmPasswordGroup.classList.add("has-error");
+            errorElement.textContent = "Nhập lại mật khẩu không được để trống.";
+            return false;
         }
 
-        // Ngừng việc submit form nếu có lỗi
-        document.querySelector("form").addEventListener("submit", function(event) {
-            if (!validateFullName() || !validateUsername() || !validatePassword() || !validateConfirmPassword()) {
-                event.preventDefault(); // Ngừng gửi form nếu có lỗi
-                alert("Vui lòng kiểm tra lại các thông tin.");
-            }
-        });
+        if (confirmPassword !== password) {
+            errorElement.style.display = "block";
+            confirmPasswordGroup.classList.add("has-error");
+            errorElement.textContent = "Mật khẩu nhập lại không đúng.";
+            return false;
+        }
+
+        errorElement.style.display = "none";
+        confirmPasswordGroup.classList.remove("has-error");
+        return true;
+    }
+
+    // Ngừng việc submit form nếu có lỗi
+    document.querySelector("form").addEventListener("submit", function(event) {
+        if (!validateFullName() || !validateUsername() || !validatePassword() || !validateConfirmPassword()) {
+            event.preventDefault(); // Ngừng gửi form nếu có lỗi
+            alert("Vui lòng kiểm tra lại các thông tin.");
+        }
+    });
 
 
-    </script>
+</script>
