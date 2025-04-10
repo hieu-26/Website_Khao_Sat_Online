@@ -106,8 +106,8 @@
                                 <select name="Questions[@i].QuestionType" class="form-select"
                                         onchange="handleQuestionTypeChange(@i, this)">
                                     <option value="Text" selected="@(Model.Questions[i].QuestionType == "Text")">Tự luận</option>
-                                    <option value="MultipleChoice" selected="@(Model.Questions[i].QuestionType == "MultipleChoice")">Trắc nghiệm</option>
-                                    <option value="Checkbox" selected="@(Model.Questions[i].QuestionType == "Checkbox")">Checkbox (nhiều lựa chọn)</option>
+                                    <option value="SingleChoice" selected="@(Model.Questions[i].QuestionType == "SingleChoice")">Trắc nghiệm</option>
+                                    <option value="MultipleChoice" selected="@(Model.Questions[i].QuestionType == "MultipleChoice")">Checkbox (nhiều lựa chọn)</option>
                                 </select>
                             </div>
                             <div class="form-check mb-3">
@@ -213,8 +213,8 @@
                     <select name="Questions[${questionCount}].QuestionType" class="form-select"
                             onchange="handleQuestionTypeChange(${questionCount}, this)">
                         <option value="Text">Tự luận</option>
-                        <option value="MultipleChoice">Trắc nghiệm</option>
-                        <option value="Checkbox">Checkbox (nhiều lựa chọn)</option>
+                            <option value="SingleChoice">Trắc nghiệm</option>
+                            <option value="MultipleChoice">Checkbox (nhiều lựa chọn)</option>
                     </select>
                 </div>
                 <div class="form-check mb-3">
