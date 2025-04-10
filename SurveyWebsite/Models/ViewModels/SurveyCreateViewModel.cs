@@ -30,7 +30,7 @@ namespace SurveyWebsite.Models.ViewModels
 
         public class QuestionViewModel
         {
-            public string QuestionId { get; set; }
+            public int QuestionId { get; set; }
 
             [Required]
             public string QuestionText { get; set; }
@@ -44,7 +44,7 @@ namespace SurveyWebsite.Models.ViewModels
 
         public class OptionViewModel
         {
-            public string OptionId { get; set; }
+            public int OptionId { get; set; }
 
             [Required]
             public string OptionText { get; set; }

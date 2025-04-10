@@ -90,6 +90,8 @@
                 {
                     <div class="card mb-3 question-item">
                         <div class="card-body">
+							<!--Thêm dòng này: Ẩn ID câu hỏi -->
+                            <input type="hidden" name="Questions[@i].QuestionId" value="@Model.Questions[i].QuestionId" /> 
                             <div class="d-flex justify-content-end">
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
                                     <i class="fas fa-trash"></i>
@@ -116,7 +118,16 @@
                                 @for (int j = 0; j < Model.Questions[i].Options.Count; j++)
                                 {
                                     <div class="input-group mb-2 option-item">
-                                        <input name="Questions[@i].Options[@j].OptionText" class="form-control" value="@Model.Questions[i].Options[j].OptionText" />
+                                        <!-- Sửa lại phần input OptionText -->
+                                        <input type="hidden" name="Questions[@i].Options[@j].OptionId"
+                                               value="@(Model.Questions[i].Options[j].OptionId)" />
+
+                                        <input type="text"
+                                               name="Questions[@i].Options[@j].OptionText"
+                                               class="form-control"
+                                               value="@Model.Questions[i].Options[j].OptionText"
+                                               placeholder="Nhập tùy chọn..." />
+
                                         <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -142,6 +153,24 @@
 </div>
 @section Scripts {
 <script>
+            document.querySelector('form').addEventListener('submit', function(e) {
+            // Lấy tất cả dữ liệu form
+            const formData = new FormData(this);
+
+            // Convert thành object để dễ đọc
+            const formObject = {};
+            formData.forEach((value, key) => {
+                formObject[key] = value;
+            });
+
+            console.log('Dữ liệu form trước khi submit:', formObject);
+
+            // Nếu muốn xem chi tiết hơn
+            console.log('Chi tiết dữ liệu form:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
+        });
     function updateQuestionIndexes() {
         const questionItems = document.querySelectorAll(".question-item");
         questionItems.forEach((qItem, i) => {
@@ -172,8 +201,11 @@
         const optionContainer = document.getElementById(`options-${qIndex}`);
         const optionItems = optionContainer.querySelectorAll(".option-item");
         optionItems.forEach((optItem, j) => {
-            const input = optItem.querySelector("input");
-            input.name = `Questions[${qIndex}].Options[${j}].OptionText`;
+        const inputs = optItem.querySelectorAll("input");
+        if (inputs.length === 2) {
+            inputs[0].name = `Questions[${qIndex}].Options[${j}].OptionId`;  // hidden ID
+            inputs[1].name = `Questions[${qIndex}].Options[${j}].OptionText`; // nội dung
+        }
         });
     }
 
@@ -189,6 +221,7 @@
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
+                    <input type="hidden" name="Questions[${questionCount}].QuestionId" value="0" />
                 <div class="mb-3">
                     <label class="form-label">Nội dung câu hỏi *</label>
                     <input name="Questions[${questionCount}].QuestionText" class="form-control" required />
@@ -219,20 +252,25 @@
         updateQuestionIndexes();
     }
 
-    function addOption(qIndex) {
-        const optionContainer = document.getElementById(`options-${qIndex}`);
-        const count = optionContainer.querySelectorAll(".option-item").length;
+            function addOption(qIndex) {
+            const optionContainer = document.getElementById(`options-${qIndex}`);
+            const count = optionContainer.querySelectorAll(".option-item").length;
 
-        const html = `
-        <div class="input-group mb-2 option-item">
-            <input name="Questions[${qIndex}].Options[${count}].OptionText" class="form-control" />
-            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>`;
-        optionContainer.insertAdjacentHTML('beforeend', html);
-        updateOptionIndexes(qIndex);
-    }
+            const html = `
+            <div class="input-group mb-2 option-item">
+                <input type="hidden" name="Questions[${qIndex}].Options[${count}].OptionId" value="0" />
+                <input type="text"
+                       name="Questions[${qIndex}].Options[${count}].OptionText"
+                       class="form-control"
+                       placeholder="Nhập tùy chọn..." />
+                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
+
+            optionContainer.insertAdjacentHTML('beforeend', html);
+            updateOptionIndexes(qIndex);
+        }
 
     function removeQuestion(btn) {
         const questionItem = btn.closest('.question-item');

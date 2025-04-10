@@ -35,10 +35,21 @@ namespace SurveyWebsite.Controllers
             return View(model);
         }
 
-        [HttpPost]
+        //Phiên bản chưa sửa option
+
+        /*[HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SurveyCreateViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                // Kiểm tra lỗi trong ModelState
+                var errors = ModelState.Values.SelectMany(v => v.Errors);
+                foreach (var error in errors)
+                {
+                    Console.WriteLine($"Error: {error.ErrorMessage}");
+                }
+            }
             if (!ModelState.IsValid)
             {
                 model.AllUsers = _context.Users.ToList();
@@ -63,11 +74,13 @@ namespace SurveyWebsite.Controllers
                 },
                 Questions = model.Questions.Select(q => new Question
                 {
+                    QuestionId = q.QuestionId == 0 ? 0 : q.QuestionId,
                     QuestionText = q.QuestionText,
                     QuestionType = q.QuestionType,
                     IsRequired = q.IsRequired,
                     Options = q.Options?.Select(o => new Option
                     {
+                        OptionId = o.OptionId == 0 ? 0 : o.OptionId,
                         OptionText = o.OptionText
                     }).ToList() ?? new List<Option>()
                 }).ToList()
@@ -85,6 +98,83 @@ namespace SurveyWebsite.Controllers
                     AddedDate = DateTime.UtcNow
                 });
                 _context.SurveyAllowedUsers.AddRange(allowed);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("MySurveys");
+        }*/
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(SurveyCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.AllUsers = _context.Users.ToList();
+                return View(model);
+            }
+
+            // Validate options for non-text questions
+            foreach (var question in model.Questions)
+            {
+                if (question.QuestionType != "Text")
+                {
+                    // Lọc bỏ các option trống
+                    question.Options = question.Options?
+                        .Where(o => !string.IsNullOrWhiteSpace(o.OptionText))
+                        .ToList();
+
+                    if (question.Options == null || !question.Options.Any())
+                    {
+                        ModelState.AddModelError("", $"Câu hỏi '{question.QuestionText}' cần ít nhất một tùy chọn hợp lệ");
+                        model.AllUsers = _context.Users.ToList();
+                        return View(model);
+                    }
+                }
+            }
+
+            var survey = new Survey
+            {
+                Title = model.Title,
+                Description = model.Description,
+                IsPublic = model.IsPublic,
+                CreatedDate = DateTime.UtcNow,
+                CreatorUserId = GetCurrentUserId(),
+                SurveySetting = new SurveySetting
+                {
+                    AllowMultipleResponses = model.AllowMultipleResponses,
+                    RequireLogin = model.RequireLogin,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate
+                },
+                Questions = model.Questions.Select(q => new Question
+                {
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType,
+                    IsRequired = q.IsRequired,
+                    Options = q.QuestionType == "Text"
+                        ? new List<Option>()
+                        : q.Options.Select(o => new Option
+                        {
+                            OptionText = o.OptionText?.Trim() ?? string.Empty
+                        }).ToList()
+                }).ToList()
+            };
+
+            _context.Surveys.Add(survey);
+            await _context.SaveChangesAsync();
+
+            // Xử lý survey không công khai
+            if (!model.IsPublic && model.AllowedUserIds != null)
+            {
+                var allowedUsers = model.AllowedUserIds
+                    .Select(uid => new SurveyAllowedUser
+                    {
+                        SurveyId = survey.SurveyId,
+                        UserId = uid,
+                        AddedDate = DateTime.UtcNow
+                    });
+                _context.SurveyAllowedUsers.AddRange(allowedUsers);
                 await _context.SaveChangesAsync();
             }
 
@@ -114,11 +204,13 @@ namespace SurveyWebsite.Controllers
                 EndDate = survey.SurveySetting?.EndDate,
                 Questions = survey.Questions.Select(q => new SurveyCreateViewModel.QuestionViewModel
                 {
+                    QuestionId = q.QuestionId == 0 ? 0 : q.QuestionId,
                     QuestionText = q.QuestionText,
                     QuestionType = q.QuestionType,
                     IsRequired = q.IsRequired,
                     Options = q.Options.Select(o => new SurveyCreateViewModel.OptionViewModel
                     {
+                        OptionId = o.OptionId,
                         OptionText = o.OptionText
                     }).ToList()
                 }).ToList(),
@@ -129,7 +221,9 @@ namespace SurveyWebsite.Controllers
             return View(model);
         }
 
-        [HttpPost]
+        //Phiên bản edit chưa sửa option
+
+        /*[HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
         {
@@ -171,6 +265,7 @@ namespace SurveyWebsite.Controllers
                 IsRequired = q.IsRequired,
                 Options = q.Options?.Select(o => new Option
                 {
+                    OptionId = o.OptionId == 0 ? 0 : o.OptionId,
                     OptionText = o.OptionText
                 }).ToList() ?? new List<Option>()
             }).ToList();
@@ -188,6 +283,75 @@ namespace SurveyWebsite.Controllers
                     UserId = uid,
                     AddedDate = DateTime.UtcNow
                 }));
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("MySurveys");
+        }*/
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, SurveyCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.AllUsers = await _context.Users.ToListAsync();
+                return View(model);
+            }
+
+            var survey = await _context.Surveys
+                .Include(s => s.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(s => s.SurveySetting)
+                .Include(s => s.SurveyAllowedUsers)
+                .FirstOrDefaultAsync(s => s.SurveyId == id);
+
+            if (survey == null) return NotFound();
+
+            // Cập nhật thông tin cơ bản
+            survey.Title = model.Title;
+            survey.Description = model.Description;
+            survey.IsPublic = model.IsPublic;
+            survey.LastModifiedDate = DateTime.UtcNow;
+
+            // Cập nhật cài đặt
+            survey.SurveySetting ??= new SurveySetting();
+            survey.SurveySetting.AllowMultipleResponses = model.AllowMultipleResponses;
+            survey.SurveySetting.RequireLogin = model.RequireLogin;
+            survey.SurveySetting.StartDate = model.StartDate;
+            survey.SurveySetting.EndDate = model.EndDate;
+
+            // Xóa câu hỏi cũ và thêm mới
+            _context.Questions.RemoveRange(survey.Questions);
+
+            survey.Questions = model.Questions.Select(q => new Question
+            {
+                QuestionText = q.QuestionText,
+                QuestionType = q.QuestionType,
+                IsRequired = q.IsRequired,
+                Options = q.QuestionType == "Text"
+                    ? new List<Option>()
+                    : q.Options?
+                        .Where(o => !string.IsNullOrWhiteSpace(o.OptionText))
+                        .Select(o => new Option
+                        {
+                            OptionText = o.OptionText.Trim()
+                        })
+                        .ToList() ?? new List<Option>()
+            }).ToList();
+
+            // Cập nhật danh sách user được phép
+            _context.SurveyAllowedUsers.RemoveRange(survey.SurveyAllowedUsers);
+
+            if (!model.IsPublic && model.AllowedUserIds != null)
+            {
+                survey.SurveyAllowedUsers = model.AllowedUserIds
+                    .Select(uid => new SurveyAllowedUser
+                    {
+                        SurveyId = survey.SurveyId,
+                        UserId = uid,
+                        AddedDate = DateTime.UtcNow
+                    }).ToList();
             }
 
             await _context.SaveChangesAsync();
@@ -401,9 +565,6 @@ namespace SurveyWebsite.Controllers
 
             return View(viewModel);
         }
-
-
-
 
     }
 }
